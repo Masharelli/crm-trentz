@@ -111,7 +111,7 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    const client = payment.clients as { display_name: string; primary_email: string };
+    const client = payment.clients as unknown as { display_name: string; primary_email: string };
     const daysLeft = payment.reminder_days_before;
     const subject = `Recordatorio: pago vence ${daysLeft === 1 ? "mañana" : `en ${daysLeft} días`}`;
     const html = buildHtml(
