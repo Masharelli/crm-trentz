@@ -1,36 +1,74 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Trentz CRM
 
-## Getting Started
+CRM interno para controlar clientes, fechas de pago, documentos y recordatorios
+por correo.
 
-First, run the development server:
+## Stack inicial
+
+- Next.js con App Router para la aplicacion web.
+- TypeScript para reducir errores al modificar codigo.
+- Tailwind CSS para estilos rapidos y consistentes.
+- Supabase para base de datos, login y storage.
+- Resend para correos transaccionales.
+
+## Lo que ya existe
+
+- `src/app/page.tsx`: dashboard protegido. Lee metricas, pagos, clientes y
+  documentos desde Supabase.
+- `src/app/login/page.tsx`: pantalla de acceso interno.
+- `src/app/auth-actions.ts`: acciones de iniciar sesion y cerrar sesion.
+- `src/lib/dashboard-data.ts`: consultas que alimentan el dashboard.
+- `src/lib/supabase`: clientes de Supabase para servidor, navegador y proxy.
+- `src/app/layout.tsx`: configuracion global de la app, idioma y metadatos del
+  sitio.
+- `src/app/globals.css`: estilos globales y variables base.
+- `.env.example`: lista de variables que necesitaremos configurar para
+  Supabase y Resend.
+- `supabase/migrations/20260531160000_initial_schema.sql`: primera version de
+  la base de datos.
+- `docs/database.md`: explicacion paso a paso de tablas, roles, seguridad y
+  ejecucion en Supabase.
+
+## Comandos utiles
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Levanta la app en desarrollo. Normalmente queda en `http://localhost:3000`.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+```bash
+npm run lint
+```
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+Revisa errores de codigo y estilo.
 
-## Learn More
+```bash
+npm run build
+```
 
-To learn more about Next.js, take a look at the following resources:
+Compila la app como se haria antes de subirla a produccion.
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Flujo de uso local
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+1. Levanta el servidor con `npm run dev`.
+2. Abre `http://localhost:3000`.
+3. Si no hay sesion activa, la app te manda a `/login`.
+4. Entra con un usuario creado en Supabase Auth.
+5. El dashboard lee datos reales desde Supabase.
 
-## Deploy on Vercel
+Si las metricas aparecen en cero, normalmente significa que las tablas aun no
+tienen registros o que el usuario no existe/esta inactivo en `profiles`.
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+## Siguientes pasos tecnicos
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Crear un proyecto en Supabase.
+2. Ejecutar la migracion de `supabase/migrations`.
+3. Crear el primer usuario administrador.
+4. Agregar variables de entorno en `.env.local`.
+5. Probar login en `/login`.
+6. Crear los formularios para registrar clientes.
+7. Agregar subida de archivos a Supabase Storage.
+8. Conectar Resend para enviar recordatorios.
+
+La guia detallada esta en `docs/database.md`.
