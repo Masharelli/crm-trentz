@@ -10,6 +10,7 @@ const pagoSchema = z.object({
   concept: z.string().min(2, "El concepto debe tener al menos 2 caracteres."),
   amount: z.coerce.number().positive("El monto debe ser mayor a 0."),
   currency: z.string().length(3).default("MXN"),
+  discount_pct: z.coerce.number().min(0).max(100).default(0),
   due_date: z.string().min(1, "La fecha de vencimiento es obligatoria."),
   paid_at: z.string().optional(),
   status: z
@@ -46,6 +47,7 @@ export async function crearPago(formData: FormData) {
     concept: d.concept.trim(),
     amount: d.amount,
     currency: d.currency,
+    discount_pct: d.discount_pct,
     due_date: d.due_date,
     paid_at: nullify(d.paid_at),
     status: d.status,
@@ -90,6 +92,7 @@ export async function actualizarPago(id: string, formData: FormData) {
       concept: d.concept.trim(),
       amount: d.amount,
       currency: d.currency,
+      discount_pct: d.discount_pct,
       due_date: d.due_date,
       paid_at: nullify(d.paid_at),
       status: d.status,

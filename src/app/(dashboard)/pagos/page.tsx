@@ -1,4 +1,4 @@
-import { ChevronRight, Pencil, Plus, WalletCards } from "lucide-react";
+import { Eye, Pencil, Plus, WalletCards } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -55,7 +55,7 @@ export default async function PagosPage({ searchParams }: Props) {
   let query = supabase
     .from("payments")
     .select(
-      "id, concept, amount, currency, due_date, paid_at, status, clients(display_name)",
+      "id, concept, amount, currency, discount_pct, due_date, paid_at, status, clients(display_name)",
     )
     .order("due_date", { ascending: true })
     .limit(100);
@@ -138,8 +138,29 @@ export default async function PagosPage({ searchParams }: Props) {
                         <td className="px-5 py-4 text-zinc-700">
                           {payment.concept}
                         </td>
-                        <td className="px-5 py-4 font-semibold text-zinc-950">
-                          {formatMoney(payment.amount, payment.currency)}
+                        <td className="px-5 py-4">
+                          {payment.discount_pct > 0 ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="text-xs text-zinc-400 line-through">
+                                {formatMoney(payment.amount, payment.currency)}
+                              </span>
+                              <div className="flex items-center gap-1.5">
+                                <span className="font-semibold text-zinc-950">
+                                  {formatMoney(
+                                    payment.amount * (1 - payment.discount_pct / 100),
+                                    payment.currency,
+                                  )}
+                                </span>
+                                <span className="inline-flex h-5 items-center rounded px-1.5 text-[11px] font-semibold bg-violet-50 text-violet-700 ring-1 ring-violet-200">
+                                  -{payment.discount_pct}%
+                                </span>
+                              </div>
+                            </div>
+                          ) : (
+                            <span className="font-semibold text-zinc-950">
+                              {formatMoney(payment.amount, payment.currency)}
+                            </span>
+                          )}
                         </td>
                         <td className="px-5 py-4 text-zinc-600">
                           {formatDate(payment.due_date)}
@@ -170,7 +191,7 @@ export default async function PagosPage({ searchParams }: Props) {
                               className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
                               aria-label={`Ver pago ${payment.concept}`}
                             >
-                              <ChevronRight size={17} />
+                              <Eye size={15} />
                             </Link>
                           </div>
                         </td>

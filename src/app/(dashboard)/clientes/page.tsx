@@ -1,4 +1,4 @@
-import { ChevronRight, Pencil, Plus, UsersRound } from "lucide-react";
+import { Eye, Pencil, Plus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -150,7 +150,7 @@ export default async function ClientesPage({ searchParams }: Props) {
                             className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
                             aria-label={`Ver ${client.display_name}`}
                           >
-                            <ChevronRight size={17} />
+                            <Eye size={15} />
                           </Link>
                         </div>
                       </td>

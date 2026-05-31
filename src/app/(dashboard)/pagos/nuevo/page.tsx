@@ -147,19 +147,36 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                 </div>
 
                 <div className="space-y-1.5">
-                  <label className={labelClass}>Dias de aviso</label>
-                  <input
-                    className={inputClass}
-                    defaultValue={3}
-                    max={90}
-                    min={0}
-                    name="reminder_days_before"
-                    type="number"
-                  />
-                  <p className="text-xs text-zinc-400">
-                    Dias antes del vencimiento.
-                  </p>
+                  <label className={labelClass}>Descuento %</label>
+                  <div className="relative">
+                    <input
+                      className={inputClass}
+                      defaultValue={0}
+                      max={100}
+                      min={0}
+                      name="discount_pct"
+                      step="0.01"
+                      type="number"
+                    />
+                    <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-sm text-zinc-400">
+                      %
+                    </span>
+                  </div>
+                  <p className="text-xs text-zinc-400">0 = sin descuento.</p>
                 </div>
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Dias de aviso</label>
+                <input
+                  className="h-11 w-48 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+                  defaultValue={3}
+                  max={90}
+                  min={0}
+                  name="reminder_days_before"
+                  type="number"
+                />
+                <p className="text-xs text-zinc-400">Dias antes del vencimiento.</p>
               </div>
             </div>
 
