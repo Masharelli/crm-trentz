@@ -1,4 +1,4 @@
-import { Download, FileText, Plus, Trash2 } from "lucide-react";
+import { Download, FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
@@ -72,7 +72,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
   const { data: documents } = await query;
   const docs = documents ?? [];
 
-  let signedUrls: Record<string, string> = {};
+  const signedUrls: Record<string, string> = {};
   if (docs.length > 0) {
     const { data: urls } = await supabase.storage
       .from("client-documents")

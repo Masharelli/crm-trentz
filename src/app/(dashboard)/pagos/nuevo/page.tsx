@@ -47,6 +47,9 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
     .order("display_name", { ascending: true });
 
   const today = new Date().toISOString().slice(0, 10);
+  const nextMonth = new Date();
+  nextMonth.setMonth(nextMonth.getMonth() + 1);
+  const nextMonthDate = nextMonth.toISOString().slice(0, 10);
 
   return (
     <>
@@ -136,7 +139,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                     </select>
                     <input
                       className={inputClass}
-                      min="0.01"
+                      min="0"
                       name="amount"
                       placeholder="0.00"
                       required
@@ -210,6 +213,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                     <option value="paid">Pagado</option>
                     <option value="overdue">Vencido</option>
                     <option value="canceled">Cancelado</option>
+                    <option value="month_zero">Mes cero</option>
                   </select>
                 </div>
               </div>
@@ -226,6 +230,44 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                   name="paid_at"
                   type="date"
                 />
+              </div>
+            </div>
+
+            {/* ── Mes cero ─────────────────────────────────── */}
+            {sectionHeader("Mes cero")}
+            <div className="space-y-5 px-6 py-6">
+              <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm font-medium text-zinc-700">
+                <input
+                  className="size-4 rounded border-zinc-300"
+                  name="is_month_zero"
+                  type="checkbox"
+                  value="true"
+                />
+                Primer mes sin cobro
+              </label>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Monto segundo mes</label>
+                  <input
+                    className={inputClass}
+                    min="0.01"
+                    name="second_month_amount"
+                    placeholder="0.00"
+                    step="0.01"
+                    type="number"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Inicio segundo mes</label>
+                  <input
+                    className={inputClass}
+                    defaultValue={nextMonthDate}
+                    name="second_month_due_date"
+                    type="date"
+                  />
+                </div>
               </div>
             </div>
 

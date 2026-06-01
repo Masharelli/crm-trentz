@@ -30,7 +30,7 @@ export default async function EditarPagoPage({ params, searchParams }: Props) {
     supabase
       .from("payments")
       .select(
-        "id, concept, amount, currency, discount_pct, due_date, paid_at, status, reminder_days_before, notes, client_id, clients(display_name)",
+        "id, concept, amount, currency, discount_pct, due_date, is_month_zero, paid_at, second_month_amount, second_month_due_date, status, reminder_days_before, notes, client_id, clients(display_name)",
       )
       .eq("id", id)
       .maybeSingle(),
@@ -45,6 +45,8 @@ export default async function EditarPagoPage({ params, searchParams }: Props) {
 
   const boundAction = actualizarPago.bind(null, id);
   const paidAt = payment.paid_at ? payment.paid_at.slice(0, 10) : "";
+  const isMonthZero =
+    payment.is_month_zero || payment.status === "month_zero";
 
   return (
     <>
@@ -137,7 +139,7 @@ export default async function EditarPagoPage({ params, searchParams }: Props) {
                     <input
                       className={inputClass}
                       defaultValue={String(payment.amount)}
-                      min="0.01"
+                      min="0"
                       name="amount"
                       required
                       step="0.01"
@@ -214,6 +216,7 @@ export default async function EditarPagoPage({ params, searchParams }: Props) {
                     <option value="paid">Pagado</option>
                     <option value="overdue">Vencido</option>
                     <option value="canceled">Cancelado</option>
+                    <option value="month_zero">Mes cero</option>
                   </select>
                 </div>
               </div>
@@ -231,6 +234,50 @@ export default async function EditarPagoPage({ params, searchParams }: Props) {
                   name="paid_at"
                   type="date"
                 />
+              </div>
+            </div>
+
+            {/* Mes cero */}
+            <div className="border-y border-zinc-100 bg-zinc-50 px-6 py-3">
+              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
+                Mes cero
+              </p>
+            </div>
+            <div className="space-y-5 px-6 py-6">
+              <label className="flex items-center gap-3 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-3 text-sm font-medium text-zinc-700">
+                <input
+                  className="size-4 rounded border-zinc-300"
+                  defaultChecked={isMonthZero}
+                  name="is_month_zero"
+                  type="checkbox"
+                  value="true"
+                />
+                Primer mes sin cobro
+              </label>
+
+              <div className="grid grid-cols-2 gap-5">
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Monto segundo mes</label>
+                  <input
+                    className={inputClass}
+                    defaultValue={String(payment.second_month_amount ?? "")}
+                    min="0.01"
+                    name="second_month_amount"
+                    placeholder="0.00"
+                    step="0.01"
+                    type="number"
+                  />
+                </div>
+
+                <div className="space-y-1.5">
+                  <label className={labelClass}>Inicio segundo mes</label>
+                  <input
+                    className={inputClass}
+                    defaultValue={payment.second_month_due_date ?? ""}
+                    name="second_month_due_date"
+                    type="date"
+                  />
+                </div>
               </div>
             </div>
 

@@ -13,6 +13,10 @@ const paymentStatus = {
     label: "Cancelado",
     statusClass: "bg-zinc-100 text-zinc-700 ring-zinc-200",
   },
+  month_zero: {
+    label: "Mes cero",
+    statusClass: "bg-violet-50 text-violet-800 ring-violet-200",
+  },
   overdue: {
     label: "Vencido",
     statusClass: "bg-rose-50 text-rose-800 ring-rose-200",
@@ -134,11 +138,13 @@ export async function getDashboardData(supabase: SupabaseClient) {
       .select("id", { count: "exact", head: true })
       .gte("due_date", today)
       .lte("due_date", nextSevenDays)
+      .eq("is_month_zero", false)
       .in("status", ["pending", "scheduled"]),
     supabase
       .from("payments")
       .select("amount,currency", { count: "exact" })
       .or(`status.eq.overdue,due_date.lt.${today}`)
+      .eq("is_month_zero", false)
       .neq("status", "paid")
       .neq("status", "canceled"),
     supabase
@@ -153,6 +159,7 @@ export async function getDashboardData(supabase: SupabaseClient) {
       .select(
         "id, amount, currency, due_date, status, clients(display_name, primary_email)",
       )
+      .eq("is_month_zero", false)
       .in("status", ["pending", "scheduled", "overdue"])
       .order("due_date", { ascending: true })
       .limit(4),

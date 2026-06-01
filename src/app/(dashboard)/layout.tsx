@@ -46,7 +46,7 @@ export default async function DashboardLayout({
           <div className="mt-auto hidden rounded-lg border border-zinc-200 bg-zinc-50 p-4 md:block">
             <p className="text-sm font-semibold">Modulos activos</p>
             <p className="mt-2 text-sm leading-6 text-zinc-600">
-              Dashboard, Clientes, Pagos y Documentos disponibles.
+              Dashboard, Clientes, Pagos, Contabilidad y Documentos disponibles.
             </p>
           </div>
         </div>

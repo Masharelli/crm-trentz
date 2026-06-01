@@ -16,7 +16,8 @@ La base de datos queda dividida por responsabilidades:
 | `profiles` | Usuarios internos de Trentz y su rol. Se conecta con `auth.users` de Supabase. |
 | `clients` | Empresas o clientes que atiende la oficina. |
 | `client_contacts` | Personas de contacto dentro de cada cliente. |
-| `payments` | Fechas de pago, montos, estados y reglas de recordatorio. |
+| `payments` | Fechas de pago, mes cero, montos, estados y reglas de recordatorio. |
+| `office_expenses` | Gastos internos de oficina para comparar egresos contra pagos cobrados. |
 | `documents` | Metadatos de archivos subidos por cliente. El archivo real vive en Supabase Storage. |
 | `notes` | Notas internas por cliente. |
 | `email_notifications` | Correos programados, enviados o fallidos. |
@@ -50,7 +51,7 @@ En terminos simples:
 
 - Si no hay usuario autenticado, no se puede leer ni modificar informacion.
 - Solo usuarios activos en `profiles` pueden ver datos internos.
-- Solo `admin`, `staff` y `billing` pueden crear o editar informacion operativa.
+- Solo `admin`, `staff` y `billing` pueden crear o editar informacion operativa, pagos y gastos.
 - Solo `admin` puede borrar datos sensibles.
 - El bucket `client-documents` es privado.
 
@@ -66,6 +67,13 @@ supabase/migrations/20260531160000_initial_schema.sql
 
 4. Pegalo en el SQL Editor.
 5. Ejecuta el script.
+
+6. Ejecuta tambien las migraciones posteriores, por ejemplo:
+
+```text
+supabase/migrations/20260601120000_add_office_expenses.sql
+supabase/migrations/20260601130000_add_month_zero_payments.sql
+```
 
 Si todo sale bien, deberias ver las tablas en `Table Editor` y el bucket
 `client-documents` en `Storage`.

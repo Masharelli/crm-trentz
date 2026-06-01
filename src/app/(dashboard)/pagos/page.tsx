@@ -7,6 +7,7 @@ import PagosFilter from "./PagosFilter";
 
 const statusLabel: Record<string, string> = {
   canceled: "Cancelado",
+  month_zero: "Mes cero",
   overdue: "Vencido",
   paid: "Pagado",
   pending: "Pendiente",
@@ -15,6 +16,7 @@ const statusLabel: Record<string, string> = {
 
 const statusClass: Record<string, string> = {
   canceled: "bg-zinc-100 text-zinc-700 ring-zinc-200",
+  month_zero: "bg-violet-50 text-violet-800 ring-violet-200",
   overdue: "bg-rose-50 text-rose-800 ring-rose-200",
   paid: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   pending: "bg-amber-50 text-amber-800 ring-amber-200",
@@ -55,7 +57,7 @@ export default async function PagosPage({ searchParams }: Props) {
   let query = supabase
     .from("payments")
     .select(
-      "id, concept, amount, currency, discount_pct, due_date, paid_at, status, clients(display_name)",
+      "id, concept, amount, currency, discount_pct, due_date, is_month_zero, paid_at, second_month_amount, second_month_due_date, status, clients(display_name)",
     )
     .order("due_date", { ascending: true })
     .limit(100);
@@ -130,6 +132,8 @@ export default async function PagosPage({ searchParams }: Props) {
                     const client = Array.isArray(payment.clients)
                       ? (payment.clients[0] as { display_name: string } | undefined)
                       : (payment.clients as { display_name: string } | null);
+                    const isMonthZero =
+                      payment.is_month_zero || payment.status === "month_zero";
                     return (
                       <tr key={payment.id} className="hover:bg-zinc-50">
                         <td className="px-5 py-4 font-medium text-zinc-950">
@@ -139,7 +143,20 @@ export default async function PagosPage({ searchParams }: Props) {
                           {payment.concept}
                         </td>
                         <td className="px-5 py-4">
-                          {payment.discount_pct > 0 ? (
+                          {isMonthZero ? (
+                            <div className="flex flex-col gap-0.5">
+                              <span className="font-semibold text-zinc-950">
+                                {formatMoney(0, payment.currency)}
+                              </span>
+                              <span className="text-xs text-zinc-500">
+                                Segundo mes{" "}
+                                {formatMoney(
+                                  payment.second_month_amount ?? 0,
+                                  payment.currency,
+                                )}
+                              </span>
+                            </div>
+                          ) : payment.discount_pct > 0 ? (
                             <div className="flex flex-col gap-0.5">
                               <span className="text-xs text-zinc-400 line-through">
                                 {formatMoney(payment.amount, payment.currency)}
@@ -163,7 +180,14 @@ export default async function PagosPage({ searchParams }: Props) {
                           )}
                         </td>
                         <td className="px-5 py-4 text-zinc-600">
-                          {formatDate(payment.due_date)}
+                          <div className="flex flex-col gap-0.5">
+                            <span>{formatDate(payment.due_date)}</span>
+                            {isMonthZero && payment.second_month_due_date ? (
+                              <span className="text-xs text-zinc-400">
+                                Cobra {formatDate(payment.second_month_due_date)}
+                              </span>
+                            ) : null}
+                          </div>
                         </td>
                         <td className="px-5 py-4 text-zinc-600">
                           {payment.paid_at

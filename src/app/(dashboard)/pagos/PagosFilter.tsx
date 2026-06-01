@@ -10,6 +10,7 @@ const statuses = [
   { label: "Pagado", value: "paid" },
   { label: "Vencido", value: "overdue" },
   { label: "Cancelado", value: "canceled" },
+  { label: "Mes cero", value: "month_zero" },
 ];
 
 export default function PagosFilter() {

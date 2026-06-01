@@ -87,6 +87,7 @@ export async function GET(request: NextRequest) {
       "id, client_id, concept, amount, currency, due_date, reminder_days_before, last_reminder_sent_at, clients!inner(display_name, primary_email)",
     )
     .in("status", ["pending", "scheduled"])
+    .eq("is_month_zero", false)
     .gte("due_date", today)
     .lte("due_date", maxFuture)
     .not("clients.primary_email", "is", null);

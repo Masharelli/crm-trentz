@@ -1,7 +1,7 @@
 # Trentz CRM
 
-CRM interno para controlar clientes, fechas de pago, documentos y recordatorios
-por correo.
+CRM interno para controlar clientes, fechas de pago, mes cero, contabilidad
+ligera, documentos y recordatorios por correo.
 
 ## Stack inicial
 
@@ -18,14 +18,16 @@ por correo.
 - `src/app/login/page.tsx`: pantalla de acceso interno.
 - `src/app/auth-actions.ts`: acciones de iniciar sesion y cerrar sesion.
 - `src/lib/dashboard-data.ts`: consultas que alimentan el dashboard.
+- `src/app/(dashboard)/contabilidad`: tracking de gastos de oficina, ingresos
+  cobrados y balance por mes.
 - `src/lib/supabase`: clientes de Supabase para servidor, navegador y proxy.
 - `src/app/layout.tsx`: configuracion global de la app, idioma y metadatos del
   sitio.
 - `src/app/globals.css`: estilos globales y variables base.
 - `.env.example`: lista de variables que necesitaremos configurar para
   Supabase y Resend.
-- `supabase/migrations/20260531160000_initial_schema.sql`: primera version de
-  la base de datos.
+- `supabase/migrations`: migraciones de base de datos, incluyendo clientes,
+  pagos, documentos y gastos de oficina.
 - `docs/database.md`: explicacion paso a paso de tablas, roles, seguridad y
   ejecucion en Supabase.
 

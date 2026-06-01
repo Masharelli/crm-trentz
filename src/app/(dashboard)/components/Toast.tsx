@@ -13,15 +13,17 @@ export default function Toast() {
   useEffect(() => {
     if (!raw) return;
 
-    setMessage(decodeURIComponent(raw));
-
     // Limpiar el param de la URL sin disparar una navegacion
     const url = new URL(window.location.href);
     url.searchParams.delete("toast");
     window.history.replaceState(null, "", url.toString());
 
-    const t = setTimeout(() => setMessage(null), 4500);
-    return () => clearTimeout(t);
+    const show = setTimeout(() => setMessage(decodeURIComponent(raw)), 0);
+    const hide = setTimeout(() => setMessage(null), 4500);
+    return () => {
+      clearTimeout(show);
+      clearTimeout(hide);
+    };
   }, [raw]);
 
   if (!message) return null;

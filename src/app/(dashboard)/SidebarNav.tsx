@@ -1,6 +1,14 @@
 "use client";
 
-import { Files, LayoutDashboard, Mail, Settings, UsersRound, WalletCards } from "lucide-react";
+import {
+  Calculator,
+  Files,
+  LayoutDashboard,
+  Mail,
+  Settings,
+  UsersRound,
+  WalletCards,
+} from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 
@@ -8,6 +16,7 @@ const navigation = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/clientes", icon: UsersRound, label: "Clientes" },
   { href: "/pagos", icon: WalletCards, label: "Pagos" },
+  { href: "/contabilidad", icon: Calculator, label: "Contabilidad" },
   { href: "/documentos", icon: Files, label: "Documentos" },
   { href: "/correos", icon: Mail, label: "Correos" },
   { href: "/ajustes", icon: Settings, label: "Ajustes" },

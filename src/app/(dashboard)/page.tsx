@@ -1,5 +1,4 @@
 import {
-  Bell,
   Building2,
   CalendarDays,
   ChevronRight,
@@ -9,7 +8,6 @@ import {
   Plus,
   Search,
   Upload,
-  UsersRound,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";

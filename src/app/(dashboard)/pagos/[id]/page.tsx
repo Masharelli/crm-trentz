@@ -9,6 +9,7 @@ type Props = {
 
 const statusLabel: Record<string, string> = {
   canceled: "Cancelado",
+  month_zero: "Mes cero",
   overdue: "Vencido",
   paid: "Pagado",
   pending: "Pendiente",
@@ -17,6 +18,7 @@ const statusLabel: Record<string, string> = {
 
 const statusClass: Record<string, string> = {
   canceled: "bg-zinc-100 text-zinc-700 ring-zinc-200",
+  month_zero: "bg-violet-50 text-violet-800 ring-violet-200",
   overdue: "bg-rose-50 text-rose-800 ring-rose-200",
   paid: "bg-emerald-50 text-emerald-800 ring-emerald-200",
   pending: "bg-amber-50 text-amber-800 ring-amber-200",
@@ -62,7 +64,7 @@ export default async function VerPagoPage({ params }: Props) {
   const { data: payment } = await supabase
     .from("payments")
     .select(
-      "id, concept, amount, currency, discount_pct, due_date, paid_at, status, reminder_days_before, notes, clients(display_name)",
+      "id, concept, amount, currency, discount_pct, due_date, is_month_zero, paid_at, second_month_amount, second_month_due_date, status, reminder_days_before, notes, clients(display_name)",
     )
     .eq("id", id)
     .maybeSingle();
@@ -72,6 +74,7 @@ export default async function VerPagoPage({ params }: Props) {
   const client = Array.isArray(payment.clients)
     ? (payment.clients[0] as { display_name: string } | undefined)
     : (payment.clients as { display_name: string } | null);
+  const isMonthZero = payment.is_month_zero || payment.status === "month_zero";
 
   return (
     <>
@@ -120,7 +123,20 @@ export default async function VerPagoPage({ params }: Props) {
               </Field>
               <div className="grid grid-cols-2 gap-5">
                 <Field label="Monto">
-                  {payment.discount_pct > 0 ? (
+                  {isMonthZero ? (
+                    <div className="flex flex-col gap-1">
+                      <span className="font-semibold">
+                        {formatMoney(0, payment.currency)}
+                      </span>
+                      <span className="text-sm text-zinc-500">
+                        Segundo mes{" "}
+                        {formatMoney(
+                          payment.second_month_amount ?? 0,
+                          payment.currency,
+                        )}
+                      </span>
+                    </div>
+                  ) : payment.discount_pct > 0 ? (
                     <div className="flex flex-col gap-1">
                       <span className="text-sm text-zinc-400 line-through">
                         {formatMoney(payment.amount, payment.currency)}
@@ -178,6 +194,13 @@ export default async function VerPagoPage({ params }: Props) {
               <Field label="Fecha de pago">
                 {payment.paid_at ? formatDate(payment.paid_at) : "—"}
               </Field>
+              {isMonthZero ? (
+                <Field label="Inicio segundo mes">
+                  {payment.second_month_due_date
+                    ? formatDate(payment.second_month_due_date)
+                    : "—"}
+                </Field>
+              ) : null}
             </div>
           </div>
 
