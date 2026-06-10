@@ -2,7 +2,9 @@ import { Download, FileText, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import Pagination, { PAGE_SIZE, parsePage } from "../components/Pagination";
 import DeleteDocumentoButton from "./DeleteDocumentoButton";
 import DocumentosFilter from "./DocumentosFilter";
 
@@ -41,7 +43,7 @@ const TYPE_COLORS: Record<string, string> = {
 };
 
 type Props = {
-  searchParams: Promise<{ type?: string; client_id?: string }>;
+  searchParams: Promise<{ type?: string; client_id?: string; page?: string }>;
 };
 
 export default async function DocumentosPage({ searchParams }: Props) {
@@ -51,15 +53,20 @@ export default async function DocumentosPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { type, client_id } = await searchParams;
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
+
+  const { type, client_id, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
 
   let query = supabase
     .from("documents")
     .select(
       "id, file_name, file_path, file_size, document_type, created_at, clients(display_name)",
+      { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (type && type !== "all") {
     query = query.eq("document_type", type);
@@ -69,7 +76,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
     query = query.eq("client_id", client_id);
   }
 
-  const { data: documents } = await query;
+  const { data: documents, count } = await query;
   const docs = documents ?? [];
 
   const signedUrls: Record<string, string> = {};
@@ -96,16 +103,18 @@ export default async function DocumentosPage({ searchParams }: Props) {
               Documentos
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              {docs.length} registros
+              {count ?? 0} registros
             </p>
           </div>
-          <Link
-            href="/documentos/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Subir documento
-          </Link>
+          {escribir ? (
+            <Link
+              href="/documentos/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Subir documento
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -182,11 +191,13 @@ export default async function DocumentosPage({ searchParams }: Props) {
                                 <Download size={15} />
                               </a>
                             ) : null}
-                            <DeleteDocumentoButton
-                              id={doc.id}
-                              filePath={doc.file_path}
-                              nombre={doc.file_name}
-                            />
+                            {escribir ? (
+                              <DeleteDocumentoButton
+                                id={doc.id}
+                                filePath={doc.file_path}
+                                nombre={doc.file_name}
+                              />
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -210,7 +221,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
                   ? "Intenta con otro tipo de documento."
                   : "Sube el primer documento para empezar."}
               </p>
-              {!type || type === "all" ? (
+              {(!type || type === "all") && escribir ? (
                 <Link
                   href="/documentos/nuevo"
                   className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
@@ -222,6 +233,13 @@ export default async function DocumentosPage({ searchParams }: Props) {
             </div>
           )}
         </div>
+
+        <Pagination
+          page={page}
+          total={count ?? 0}
+          basePath="/documentos"
+          params={{ type, client_id }}
+        />
       </div>
     </>
   );

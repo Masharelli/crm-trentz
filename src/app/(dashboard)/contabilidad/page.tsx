@@ -9,6 +9,7 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import ContabilidadFilter from "./ContabilidadFilter";
 import {
@@ -125,6 +126,9 @@ export default async function ContabilidadPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
 
   const params = await searchParams;
   const month = normalizeMonth(params.month);
@@ -259,13 +263,15 @@ export default async function ContabilidadPage({ searchParams }: Props) {
               {formatMonth(month)} · {currency}
             </p>
           </div>
-          <Link
-            href="/contabilidad/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Nuevo gasto
-          </Link>
+          {escribir ? (
+            <Link
+              href="/contabilidad/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Nuevo gasto
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -376,13 +382,15 @@ export default async function ContabilidadPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end">
-                            <Link
-                              href={`/contabilidad/${expense.id}/editar`}
-                              className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                              aria-label={`Editar gasto ${expense.description}`}
-                            >
-                              <Pencil size={15} />
-                            </Link>
+                            {escribir ? (
+                              <Link
+                                href={`/contabilidad/${expense.id}/editar`}
+                                className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                                aria-label={`Editar gasto ${expense.description}`}
+                              >
+                                <Pencil size={15} />
+                              </Link>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -401,13 +409,15 @@ export default async function ContabilidadPage({ searchParams }: Props) {
                 <p className="text-sm text-zinc-500">
                   Agrega gastos de renta, servicios, nomina o software.
                 </p>
-                <Link
-                  href="/contabilidad/nuevo"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                >
-                  <Plus size={16} />
-                  Nuevo gasto
-                </Link>
+                {escribir ? (
+                  <Link
+                    href="/contabilidad/nuevo"
+                    className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  >
+                    <Plus size={16} />
+                    Nuevo gasto
+                  </Link>
+                ) : null}
               </div>
             )}
           </div>

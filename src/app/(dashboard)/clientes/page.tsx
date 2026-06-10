@@ -2,7 +2,9 @@ import { Eye, Pencil, Plus, UsersRound } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import Pagination, { PAGE_SIZE, parsePage } from "../components/Pagination";
 import ClientesFilter from "./ClientesFilter";
 
 const statusLabel: Record<string, string> = {
@@ -29,7 +31,7 @@ function formatDate(value: string) {
 }
 
 type Props = {
-  searchParams: Promise<{ q?: string; status?: string }>;
+  searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 };
 
 export default async function ClientesPage({ searchParams }: Props) {
@@ -40,15 +42,20 @@ export default async function ClientesPage({ searchParams }: Props) {
 
   if (!user) redirect("/login");
 
-  const { q, status } = await searchParams;
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
+
+  const { q, status, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
 
   let query = supabase
     .from("clients")
     .select(
       "id, display_name, legal_name, tax_id, primary_email, primary_phone, status, updated_at",
+      { count: "exact" },
     )
     .order("updated_at", { ascending: false })
-    .limit(100);
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (status) {
     query = query.eq("status", status);
@@ -60,7 +67,7 @@ export default async function ClientesPage({ searchParams }: Props) {
     );
   }
 
-  const { data: clients } = await query;
+  const { data: clients, count } = await query;
 
   return (
     <>
@@ -71,16 +78,18 @@ export default async function ClientesPage({ searchParams }: Props) {
               Clientes
             </h1>
             <p className="mt-1 text-sm text-zinc-500">
-              {clients?.length ?? 0} registros
+              {count ?? 0} registros
             </p>
           </div>
-          <Link
-            href="/clientes/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Nuevo cliente
-          </Link>
+          {escribir ? (
+            <Link
+              href="/clientes/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Nuevo cliente
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -138,13 +147,15 @@ export default async function ClientesPage({ searchParams }: Props) {
                       </td>
                       <td className="px-5 py-4">
                         <div className="flex items-center justify-end gap-1">
-                          <Link
-                            href={`/clientes/${client.id}/editar`}
-                            className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                            aria-label={`Editar ${client.display_name}`}
-                          >
-                            <Pencil size={15} />
-                          </Link>
+                          {escribir ? (
+                            <Link
+                              href={`/clientes/${client.id}/editar`}
+                              className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                              aria-label={`Editar ${client.display_name}`}
+                            >
+                              <Pencil size={15} />
+                            </Link>
+                          ) : null}
                           <Link
                             href={`/clientes/${client.id}`}
                             className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
@@ -172,7 +183,7 @@ export default async function ClientesPage({ searchParams }: Props) {
                   ? "Intenta con otros filtros."
                   : "Agrega el primer cliente para empezar."}
               </p>
-              {!q && !status ? (
+              {!q && !status && escribir ? (
                 <Link
                   href="/clientes/nuevo"
                   className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
@@ -184,6 +195,13 @@ export default async function ClientesPage({ searchParams }: Props) {
             </div>
           )}
         </div>
+
+        <Pagination
+          page={page}
+          total={count ?? 0}
+          basePath="/clientes"
+          params={{ q, status }}
+        />
       </div>
     </>
   );

@@ -58,14 +58,17 @@ export default async function Home() {
           </div>
 
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <label className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 sm:w-72">
-              <Search size={17} />
-              <input
-                className="w-full bg-transparent text-zinc-900 outline-none placeholder:text-zinc-400"
-                placeholder="Buscar cliente, pago o documento"
-                type="search"
-              />
-            </label>
+            <form action="/buscar" className="sm:w-72">
+              <label className="flex h-11 min-w-0 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500">
+                <Search size={17} />
+                <input
+                  className="w-full bg-transparent text-zinc-900 outline-none placeholder:text-zinc-400"
+                  name="q"
+                  placeholder="Buscar cliente, pago o documento"
+                  type="search"
+                />
+              </label>
+            </form>
             <div className="grid grid-cols-2 gap-2 sm:flex">
               <Link
                 href="/clientes/nuevo"
@@ -74,10 +77,13 @@ export default async function Home() {
                 <Plus size={17} />
                 Cliente
               </Link>
-              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50">
+              <Link
+                href="/documentos/nuevo"
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
+              >
                 <Upload size={17} />
                 Documento
-              </button>
+              </Link>
               <form action={signOut} className="col-span-2 sm:col-span-1">
                 <button
                   className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"

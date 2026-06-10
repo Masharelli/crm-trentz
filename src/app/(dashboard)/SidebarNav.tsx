@@ -2,6 +2,7 @@
 
 import {
   Calculator,
+  ClipboardList,
   Files,
   Funnel,
   LayoutDashboard,
@@ -19,6 +20,7 @@ const navigation = [
   { href: "/clientes", icon: UsersRound, label: "Clientes" },
   { href: "/funnels", icon: Funnel, label: "Funnels" },
   { href: "/tareas", icon: ListChecks, label: "Tareas" },
+  { href: "/formularios", icon: ClipboardList, label: "Formularios" },
   { href: "/pagos", icon: WalletCards, label: "Pagos" },
   { href: "/contabilidad", icon: Calculator, label: "Contabilidad" },
   { href: "/documentos", icon: Files, label: "Documentos" },

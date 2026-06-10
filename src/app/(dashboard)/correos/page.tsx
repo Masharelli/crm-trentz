@@ -2,7 +2,9 @@ import { Mail, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import Pagination, { PAGE_SIZE, parsePage } from "../components/Pagination";
 import CorreosFilter from "./CorreosFilter";
 import DeleteCorreoButton from "./DeleteCorreoButton";
 
@@ -31,7 +33,7 @@ const statusClass: Record<string, string> = {
 };
 
 type Props = {
-  searchParams: Promise<{ status?: string }>;
+  searchParams: Promise<{ status?: string; page?: string }>;
 };
 
 export default async function CorreosPage({ searchParams }: Props) {
@@ -41,21 +43,26 @@ export default async function CorreosPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
   if (!user) redirect("/login");
 
-  const { status } = await searchParams;
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
+
+  const { status, page: pageParam } = await searchParams;
+  const page = parsePage(pageParam);
 
   let query = supabase
     .from("email_notifications")
     .select(
       "id, recipient_email, subject, body, status, sent_at, created_at, clients(display_name)",
+      { count: "exact" },
     )
     .order("created_at", { ascending: false })
-    .limit(100);
+    .range((page - 1) * PAGE_SIZE, page * PAGE_SIZE - 1);
 
   if (status) {
     query = query.eq("status", status);
   }
 
-  const { data: emails } = await query;
+  const { data: emails, count } = await query;
   const rows = emails ?? [];
 
   return (
@@ -66,15 +73,17 @@ export default async function CorreosPage({ searchParams }: Props) {
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Correos
             </h1>
-            <p className="mt-1 text-sm text-zinc-500">{rows.length} registros</p>
+            <p className="mt-1 text-sm text-zinc-500">{count ?? 0} registros</p>
           </div>
-          <Link
-            href="/correos/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Redactar correo
-          </Link>
+          {escribir ? (
+            <Link
+              href="/correos/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Redactar correo
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -133,7 +142,9 @@ export default async function CorreosPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end">
-                            <DeleteCorreoButton id={email.id} />
+                            {escribir ? (
+                              <DeleteCorreoButton id={email.id} />
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -155,7 +166,7 @@ export default async function CorreosPage({ searchParams }: Props) {
                   ? "Intenta con otro filtro."
                   : "Redacta el primer correo para empezar."}
               </p>
-              {!status ? (
+              {!status && escribir ? (
                 <Link
                   href="/correos/nuevo"
                   className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
@@ -167,6 +178,13 @@ export default async function CorreosPage({ searchParams }: Props) {
             </div>
           )}
         </div>
+
+        <Pagination
+          page={page}
+          total={count ?? 0}
+          basePath="/correos"
+          params={{ status }}
+        />
       </div>
     </>
   );

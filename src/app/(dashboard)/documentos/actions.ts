@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
 
 const docSchema = z.object({
@@ -57,15 +58,19 @@ export async function subirDocumento(formData: FormData) {
     );
   }
 
-  const { error: dbError } = await supabase.from("documents").insert({
-    client_id: d.client_id,
-    uploaded_by: user.id,
-    file_name: file.name,
-    file_path: storagePath,
-    file_size: file.size,
-    mime_type: file.type || null,
-    document_type: d.document_type,
-  });
+  const { data: doc, error: dbError } = await supabase
+    .from("documents")
+    .insert({
+      client_id: d.client_id,
+      uploaded_by: user.id,
+      file_name: file.name,
+      file_path: storagePath,
+      file_size: file.size,
+      mime_type: file.type || null,
+      document_type: d.document_type,
+    })
+    .select("id")
+    .single();
 
   if (dbError) {
     await supabase.storage.from("client-documents").remove([storagePath]);
@@ -74,7 +79,17 @@ export async function subirDocumento(formData: FormData) {
     );
   }
 
+  await logActivity(supabase, {
+    actor_id: user.id,
+    client_id: d.client_id,
+    entity_type: "document",
+    entity_id: doc?.id ?? null,
+    action: "uploaded",
+    description: `Documento subido: ${file.name}`,
+  });
+
   revalidatePath("/documentos");
+  revalidatePath(`/clientes/${d.client_id}`);
   redirect(
     `/documentos?toast=${encodeURIComponent("Documento subido correctamente")}`,
   );

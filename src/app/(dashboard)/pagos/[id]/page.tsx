@@ -1,6 +1,7 @@
 import { ArrowLeft, Pencil } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
 type Props = {
@@ -59,6 +60,9 @@ export default async function VerPagoPage({ params }: Props) {
 
   if (!user) redirect("/login");
 
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
+
   const { id } = await params;
 
   const { data: payment } = await supabase
@@ -95,13 +99,15 @@ export default async function VerPagoPage({ params }: Props) {
               <p className="text-sm text-zinc-500">{payment.concept}</p>
             </div>
           </div>
-          <Link
-            href={`/pagos/${id}/editar`}
-            className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-          >
-            <Pencil size={14} />
-            Editar
-          </Link>
+          {escribir ? (
+            <Link
+              href={`/pagos/${id}/editar`}
+              className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+            >
+              <Pencil size={14} />
+              Editar
+            </Link>
+          ) : null}
         </div>
       </header>
 

@@ -1,6 +1,7 @@
 import { ArrowLeft, Pencil, Plus, Workflow } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
 function formatDate(value: string) {
@@ -19,6 +20,9 @@ export default async function FlujosPage() {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
 
   const { data: flows } = await supabase
     .from("task_flows")
@@ -47,13 +51,15 @@ export default async function FlujosPage() {
               </p>
             </div>
           </div>
-          <Link
-            href="/tareas/flujos/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Nuevo flujo
-          </Link>
+          {escribir ? (
+            <Link
+              href="/tareas/flujos/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Nuevo flujo
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -101,13 +107,15 @@ export default async function FlujosPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end">
-                            <Link
-                              href={`/tareas/flujos/${flow.id}/editar`}
-                              className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                              aria-label={`Editar ${flow.name}`}
-                            >
-                              <Pencil size={15} />
-                            </Link>
+                            {escribir ? (
+                              <Link
+                                href={`/tareas/flujos/${flow.id}/editar`}
+                                className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                                aria-label={`Editar ${flow.name}`}
+                              >
+                                <Pencil size={15} />
+                              </Link>
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -128,13 +136,15 @@ export default async function FlujosPage() {
                 Un flujo es una plantilla de pasos (p. ej. Onboarding) que
                 puedes asignar a tus clientes.
               </p>
-              <Link
-                href="/tareas/flujos/nuevo"
-                className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-              >
-                <Plus size={16} />
-                Nuevo flujo
-              </Link>
+              {escribir ? (
+                <Link
+                  href="/tareas/flujos/nuevo"
+                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                >
+                  <Plus size={16} />
+                  Nuevo flujo
+                </Link>
+              ) : null}
             </div>
           )}
         </div>

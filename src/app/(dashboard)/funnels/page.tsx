@@ -1,6 +1,7 @@
 import { Eye, Funnel, Pencil, Plus } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 
 function formatDate(value: string) {
@@ -20,6 +21,9 @@ export default async function FunnelsPage() {
 
   if (!user) redirect("/login");
 
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
+
   const { data: funnels } = await supabase
     .from("funnels")
     .select("id, name, description, updated_at, funnel_stages(count), funnel_clients(count)")
@@ -38,13 +42,15 @@ export default async function FunnelsPage() {
               {funnels?.length ?? 0} registros
             </p>
           </div>
-          <Link
-            href="/funnels/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-          >
-            <Plus size={17} />
-            Nuevo funnel
-          </Link>
+          {escribir ? (
+            <Link
+              href="/funnels/nuevo"
+              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            >
+              <Plus size={17} />
+              Nuevo funnel
+            </Link>
+          ) : null}
         </div>
       </header>
 
@@ -97,13 +103,15 @@ export default async function FunnelsPage() {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end gap-1">
-                            <Link
-                              href={`/funnels/${funnel.id}/editar`}
-                              className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                              aria-label={`Editar ${funnel.name}`}
-                            >
-                              <Pencil size={15} />
-                            </Link>
+                            {escribir ? (
+                              <Link
+                                href={`/funnels/${funnel.id}/editar`}
+                                className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                                aria-label={`Editar ${funnel.name}`}
+                              >
+                                <Pencil size={15} />
+                              </Link>
+                            ) : null}
                             <Link
                               href={`/funnels/${funnel.id}`}
                               className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
@@ -131,13 +139,15 @@ export default async function FunnelsPage() {
                 Crea tu primer funnel con sus etapas para organizar a tus
                 clientes.
               </p>
-              <Link
-                href="/funnels/nuevo"
-                className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-              >
-                <Plus size={16} />
-                Nuevo funnel
-              </Link>
+              {escribir ? (
+                <Link
+                  href="/funnels/nuevo"
+                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                >
+                  <Plus size={16} />
+                  Nuevo funnel
+                </Link>
+              ) : null}
             </div>
           )}
         </div>

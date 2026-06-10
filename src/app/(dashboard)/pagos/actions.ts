@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
+import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
 
 const optionalPositiveNumber = z.preprocess(
@@ -86,28 +87,41 @@ export async function crearPago(formData: FormData) {
   const d = parsed.data;
   const isMonthZero = d.is_month_zero || d.status === "month_zero";
 
-  const { error } = await supabase.from("payments").insert({
-    client_id: d.client_id,
-    concept: d.concept.trim(),
-    amount: isMonthZero ? 0 : d.amount,
-    currency: d.currency,
-    discount_pct: isMonthZero ? 0 : d.discount_pct,
-    due_date: d.due_date,
-    is_month_zero: isMonthZero,
-    paid_at: isMonthZero ? null : nullify(d.paid_at),
-    second_month_amount: isMonthZero ? d.second_month_amount : null,
-    second_month_due_date: isMonthZero ? d.second_month_due_date : null,
-    status: isMonthZero ? "month_zero" : d.status,
-    reminder_days_before: d.reminder_days_before,
-    notes: nullify(d.notes),
-    created_by: user.id,
-  });
+  const { data: pago, error } = await supabase
+    .from("payments")
+    .insert({
+      client_id: d.client_id,
+      concept: d.concept.trim(),
+      amount: isMonthZero ? 0 : d.amount,
+      currency: d.currency,
+      discount_pct: isMonthZero ? 0 : d.discount_pct,
+      due_date: d.due_date,
+      is_month_zero: isMonthZero,
+      paid_at: isMonthZero ? null : nullify(d.paid_at),
+      second_month_amount: isMonthZero ? d.second_month_amount : null,
+      second_month_due_date: isMonthZero ? d.second_month_due_date : null,
+      status: isMonthZero ? "month_zero" : d.status,
+      reminder_days_before: d.reminder_days_before,
+      notes: nullify(d.notes),
+      created_by: user.id,
+    })
+    .select("id")
+    .single();
 
   if (error) {
     redirect(
       `/pagos/nuevo?error=${encodeURIComponent("No se pudo guardar el pago. Intenta de nuevo.")}`,
     );
   }
+
+  await logActivity(supabase, {
+    actor_id: user.id,
+    client_id: d.client_id,
+    entity_type: "payment",
+    entity_id: pago?.id ?? null,
+    action: "created",
+    description: `Pago registrado: ${d.concept.trim()}`,
+  });
 
   revalidatePath("/pagos");
   revalidatePath("/");
@@ -157,6 +171,15 @@ export async function actualizarPago(id: string, formData: FormData) {
       `/pagos/${id}/editar?error=${encodeURIComponent("No se pudo actualizar el pago. Intenta de nuevo.")}`,
     );
   }
+
+  await logActivity(supabase, {
+    actor_id: user.id,
+    client_id: d.client_id,
+    entity_type: "payment",
+    entity_id: id,
+    action: "updated",
+    description: `Pago actualizado: ${d.concept.trim()}${d.paid_at ? " (marcado como pagado)" : ""}`,
+  });
 
   revalidatePath("/pagos");
   revalidatePath("/");

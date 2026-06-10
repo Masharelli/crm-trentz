@@ -1,6 +1,7 @@
 import { ListChecks, Plus, Workflow } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import DeleteTareaButton from "./DeleteTareaButton";
 import TaskToggle from "./TaskToggle";
@@ -42,6 +43,9 @@ export default async function TareasPage({ searchParams }: Props) {
   } = await supabase.auth.getUser();
 
   if (!user) redirect("/login");
+
+  const role = await getCurrentRole(supabase, user.id);
+  const escribir = canWrite(role);
 
   const { estado } = await searchParams;
   const hoy = new Date().toISOString().slice(0, 10);
@@ -86,13 +90,15 @@ export default async function TareasPage({ searchParams }: Props) {
               <Workflow size={16} />
               Flujos
             </Link>
-            <Link
-              href="/tareas/nueva"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-            >
-              <Plus size={17} />
-              Nueva tarea
-            </Link>
+            {escribir ? (
+              <Link
+                href="/tareas/nueva"
+                className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              >
+                <Plus size={17} />
+                Nueva tarea
+              </Link>
+            ) : null}
           </div>
         </div>
       </header>
@@ -139,11 +145,15 @@ export default async function TareasPage({ searchParams }: Props) {
                     return (
                       <tr key={task.id} className="hover:bg-zinc-50">
                         <td className="px-5 py-4">
-                          <TaskToggle
-                            taskId={task.id}
-                            clientId={task.client_id}
-                            completed={completada}
-                          />
+                          {escribir ? (
+                            <TaskToggle
+                              taskId={task.id}
+                              clientId={task.client_id}
+                              completed={completada}
+                            />
+                          ) : (
+                            <span className={`grid size-5 place-items-center rounded border ${completada ? "border-emerald-300 bg-emerald-50 text-emerald-600" : "border-zinc-300"}`}>{completada ? "✓" : ""}</span>
+                          )}
                         </td>
                         <td className="px-5 py-4">
                           <p
@@ -189,11 +199,13 @@ export default async function TareasPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           <div className="flex items-center justify-end">
-                            <DeleteTareaButton
-                              taskId={task.id}
-                              clientId={task.client_id}
-                              nombre={task.name}
-                            />
+                            {escribir ? (
+                              <DeleteTareaButton
+                                taskId={task.id}
+                                clientId={task.client_id}
+                                nombre={task.name}
+                              />
+                            ) : null}
                           </div>
                         </td>
                       </tr>
@@ -218,13 +230,15 @@ export default async function TareasPage({ searchParams }: Props) {
                 Crea una tarea suelta o asigna un flujo a un cliente desde su
                 ficha.
               </p>
-              <Link
-                href="/tareas/nueva"
-                className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
-              >
-                <Plus size={16} />
-                Nueva tarea
-              </Link>
+              {escribir ? (
+                <Link
+                  href="/tareas/nueva"
+                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                >
+                  <Plus size={16} />
+                  Nueva tarea
+                </Link>
+              ) : null}
             </div>
           )}
         </div>
