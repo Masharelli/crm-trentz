@@ -174,5 +174,5 @@ export async function eliminarPago(id: string) {
   await supabase.from("payments").delete().eq("id", id);
   revalidatePath("/pagos");
   revalidatePath("/");
-  redirect("/pagos");
+  redirect(`/pagos?toast=${encodeURIComponent("Pago eliminado correctamente")}`);
 }

@@ -3,49 +3,52 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "../../components/SubmitButton";
-import { subirDocumento } from "../actions";
-
-type Props = {
-  searchParams: Promise<{ error?: string; client_id?: string }>;
-};
+import { crearTarea } from "../actions";
 
 const inputClass =
   "h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100";
 
 const labelClass = "block text-sm font-medium text-zinc-700";
 
-export default async function NuevoDocumentoPage({ searchParams }: Props) {
+type Props = {
+  searchParams: Promise<{ error?: string; client_id?: string; from?: string }>;
+};
+
+export default async function NuevaTareaPage({ searchParams }: Props) {
   const supabase = await createClient();
   const {
     data: { user },
   } = await supabase.auth.getUser();
+
   if (!user) redirect("/login");
 
-  const { error, client_id: preselectedClientId } = await searchParams;
+  const { error, client_id, from } = await searchParams;
 
-  const { data: clientes } = await supabase
+  const { data: clients } = await supabase
     .from("clients")
     .select("id, display_name")
-    .in("status", ["active", "prospect", "paused"])
-    .order("display_name");
+    .order("display_name", { ascending: true })
+    .limit(500);
+
+  const volverA = from === "cliente" && client_id ? `/clientes/${client_id}` : "/tareas";
 
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center gap-3">
           <Link
-            href="/documentos"
+            href={volverA}
             className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
-            aria-label="Volver a documentos"
+            aria-label="Volver"
           >
             <ArrowLeft size={17} />
           </Link>
           <div>
             <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
-              Subir documento
+              Nueva tarea
             </h1>
             <p className="text-sm text-zinc-500">
-              PDF, imagen, Word o Excel — max. 10 MB
+              Tarea suelta asociada a un cliente
             </p>
           </div>
         </div>
@@ -60,37 +63,14 @@ export default async function NuevoDocumentoPage({ searchParams }: Props) {
           ) : null}
 
           <form
-            action={subirDocumento}
+            action={crearTarea}
             className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm"
           >
-            {/* Archivo */}
+            <input name="from" type="hidden" value={from ?? ""} />
+
             <div className="border-b border-zinc-100 bg-zinc-50 px-6 py-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                Archivo
-              </p>
-            </div>
-            <div className="space-y-5 px-6 py-6">
-              <div className="space-y-1.5">
-                <label className={labelClass}>
-                  Seleccionar archivo <span className="text-rose-500">*</span>
-                </label>
-                <input
-                  accept=".pdf,.png,.jpg,.jpeg,.docx,.xlsx"
-                  className="block w-full rounded-md border border-zinc-200 bg-white text-sm text-zinc-700 outline-none file:mr-4 file:h-full file:border-0 file:border-r file:border-zinc-200 file:bg-zinc-50 file:px-4 file:py-2.5 file:text-sm file:font-medium file:text-zinc-700 hover:file:bg-zinc-100"
-                  name="file"
-                  required
-                  type="file"
-                />
-                <p className="text-xs text-zinc-400">
-                  Formatos aceptados: PDF, PNG, JPG, DOCX, XLSX
-                </p>
-              </div>
-            </div>
-
-            {/* Detalles */}
-            <div className="border-y border-zinc-100 bg-zinc-50 px-6 py-3">
-              <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
-                Detalles
+                Datos de la tarea
               </p>
             </div>
             <div className="space-y-5 px-6 py-6">
@@ -100,43 +80,51 @@ export default async function NuevoDocumentoPage({ searchParams }: Props) {
                 </label>
                 <select
                   className={inputClass}
-                  defaultValue={preselectedClientId ?? ""}
+                  defaultValue={client_id ?? ""}
                   name="client_id"
                   required
                 >
                   <option value="" disabled>
                     Selecciona un cliente...
                   </option>
-                  {(clientes ?? []).map((c) => (
-                    <option key={c.id} value={c.id}>
-                      {c.display_name}
+                  {(clients ?? []).map((client) => (
+                    <option key={client.id} value={client.id}>
+                      {client.display_name}
                     </option>
                   ))}
                 </select>
               </div>
 
               <div className="space-y-1.5">
-                <label className={labelClass}>Tipo de documento</label>
-                <select className="h-11 w-72 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100" name="document_type" defaultValue="other">
-                  <option value="contract">Contrato</option>
-                  <option value="identification">Identificacion</option>
-                  <option value="tax">Fiscal / Factura</option>
-                  <option value="payment_receipt">Recibo de pago</option>
-                  <option value="legal">Legal</option>
-                  <option value="other">Otro</option>
-                </select>
+                <label className={labelClass}>
+                  Tarea <span className="text-rose-500">*</span>
+                </label>
+                <input
+                  className={inputClass}
+                  name="name"
+                  placeholder="Llamar para confirmar la propuesta"
+                  required
+                  type="text"
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <label className={labelClass}>Fecha limite</label>
+                <input className="h-11 w-72 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100" name="due_date" type="date" />
+                <p className="text-xs text-zinc-400">
+                  Opcional. Si la dejas vacia, la tarea no marca atraso.
+                </p>
               </div>
             </div>
 
-            {/* Acciones */}
             <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
               <Link
-                href="/documentos"
+                href={volverA}
                 className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
               >
                 Cancelar
               </Link>
-              <SubmitButton label="Subir documento" pendingLabel="Subiendo..." />
+              <SubmitButton label="Crear tarea" pendingLabel="Creando..." />
             </div>
           </form>
         </div>

@@ -3,7 +3,9 @@
 import {
   Calculator,
   Files,
+  Funnel,
   LayoutDashboard,
+  ListChecks,
   Mail,
   Settings,
   UsersRound,
@@ -15,6 +17,8 @@ import { usePathname } from "next/navigation";
 const navigation = [
   { href: "/", icon: LayoutDashboard, label: "Dashboard" },
   { href: "/clientes", icon: UsersRound, label: "Clientes" },
+  { href: "/funnels", icon: Funnel, label: "Funnels" },
+  { href: "/tareas", icon: ListChecks, label: "Tareas" },
   { href: "/pagos", icon: WalletCards, label: "Pagos" },
   { href: "/contabilidad", icon: Calculator, label: "Contabilidad" },
   { href: "/documentos", icon: Files, label: "Documentos" },

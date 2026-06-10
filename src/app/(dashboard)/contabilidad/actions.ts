@@ -154,5 +154,5 @@ export async function eliminarGasto(id: string) {
   await supabase.from("office_expenses").delete().eq("id", id);
   revalidatePath("/contabilidad");
   revalidatePath("/");
-  redirect("/contabilidad");
+  redirect(`/contabilidad?toast=${encodeURIComponent("Gasto eliminado correctamente")}`);
 }

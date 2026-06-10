@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { LoaderCircle, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { eliminarCorreo } from "./actions";
 
@@ -24,7 +24,11 @@ export default function DeleteCorreoButton({ id }: { id: string }) {
       aria-label="Eliminar correo"
       className="grid size-8 place-items-center rounded-md text-zinc-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
     >
-      <Trash2 size={15} />
+      {isPending ? (
+        <LoaderCircle className="animate-spin" size={15} />
+      ) : (
+        <Trash2 size={15} />
+      )}
     </button>
   );
 }

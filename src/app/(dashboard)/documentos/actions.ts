@@ -92,5 +92,5 @@ export async function eliminarDocumento(id: string, filePath: string) {
   await supabase.from("documents").delete().eq("id", id);
 
   revalidatePath("/documentos");
-  redirect("/documentos");
+  redirect(`/documentos?toast=${encodeURIComponent("Documento eliminado correctamente")}`);
 }

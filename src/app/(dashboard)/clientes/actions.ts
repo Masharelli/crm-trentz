@@ -135,5 +135,5 @@ export async function eliminarCliente(id: string) {
 
   await supabase.from("clients").delete().eq("id", id);
   revalidatePath("/clientes");
-  redirect("/clientes");
+  redirect(`/clientes?toast=${encodeURIComponent("Cliente eliminado correctamente")}`);
 }

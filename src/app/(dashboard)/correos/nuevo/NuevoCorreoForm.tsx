@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import SubmitButton from "../../components/SubmitButton";
 import { enviarCorreo } from "../actions";
 
 type Client = {
@@ -132,12 +133,7 @@ export default function NuevoCorreoForm({
             >
               Cancelar
             </Link>
-            <button
-              className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
-              type="submit"
-            >
-              Enviar correo
-            </button>
+            <SubmitButton label="Enviar correo" pendingLabel="Enviando..." />
           </div>
         </form>
       </div>

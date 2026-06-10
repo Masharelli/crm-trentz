@@ -23,3 +23,26 @@ a,
 input {
   font: inherit;
 }
+
+/* Barra de scroll siempre visible para tableros horizontales (kanban) */
+.board-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: #d4d4d8 transparent;
+}
+
+.board-scroll::-webkit-scrollbar {
+  height: 10px;
+}
+
+.board-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.board-scroll::-webkit-scrollbar-thumb {
+  background: #d4d4d8;
+  border-radius: 9999px;
+}
+
+.board-scroll::-webkit-scrollbar-thumb:hover {
+  background: #a1a1aa;
+}

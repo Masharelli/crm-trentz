@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import SubmitButton from "../../components/SubmitButton";
 import { crearPago } from "../actions";
 
 type Props = {
@@ -289,12 +290,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
               >
                 Cancelar
               </Link>
-              <button
-                className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                type="submit"
-              >
-                Guardar pago
-              </button>
+              <SubmitButton label="Guardar pago" pendingLabel="Guardando..." />
             </div>
           </form>
         </div>

@@ -2,6 +2,7 @@ import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 import { createClient } from "@/lib/supabase/server";
+import SubmitButton from "../../../components/SubmitButton";
 import { actualizarGasto } from "../../actions";
 import { currencies, expenseCategories } from "../../constants";
 import DeleteGastoButton from "./DeleteGastoButton";
@@ -231,12 +232,7 @@ export default async function EditarGastoPage({
               >
                 Cancelar
               </Link>
-              <button
-                className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800"
-                type="submit"
-              >
-                Guardar cambios
-              </button>
+              <SubmitButton label="Guardar cambios" pendingLabel="Guardando..." />
             </div>
           </form>
 

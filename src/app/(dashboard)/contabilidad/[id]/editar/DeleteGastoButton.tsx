@@ -1,6 +1,6 @@
 "use client";
 
-import { Trash2 } from "lucide-react";
+import { LoaderCircle, Trash2 } from "lucide-react";
 import { useTransition } from "react";
 import { eliminarGasto } from "../../actions";
 
@@ -34,7 +34,11 @@ export default function DeleteGastoButton({
       onClick={handleDelete}
       type="button"
     >
-      <Trash2 size={16} />
+      {isPending ? (
+        <LoaderCircle className="animate-spin" size={16} />
+      ) : (
+        <Trash2 size={16} />
+      )}
       {isPending ? "Eliminando..." : "Eliminar gasto"}
     </button>
   );

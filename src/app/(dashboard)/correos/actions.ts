@@ -107,5 +107,5 @@ export async function eliminarCorreo(id: string) {
 
   await supabase.from("email_notifications").delete().eq("id", id);
   revalidatePath("/correos");
-  redirect("/correos");
+  redirect(`/correos?toast=${encodeURIComponent("Correo eliminado correctamente")}`);
 }
