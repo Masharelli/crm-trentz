@@ -18,6 +18,7 @@ import {
 } from "@/lib/forms";
 import { canWrite, getCurrentRole, isAdmin } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import SendLinkButton from "../../components/SendLinkButton";
 import SubmitButton from "../../components/SubmitButton";
 import {
   EliminarAsignacionButton,
@@ -27,7 +28,8 @@ import CopyLinkButton from "../../formularios/CopyLinkButton";
 import DeleteTareaButton from "../../tareas/DeleteTareaButton";
 import QuitarFlujoButton from "../../tareas/QuitarFlujoButton";
 import TaskToggle from "../../tareas/TaskToggle";
-import { agregarNota } from "../actions";
+import { agregarNota, enviarLigaPortal } from "../actions";
+import { enviarLigaFormulario } from "../../formularios/actions";
 import { DeleteContactoButton, DeleteNotaButton } from "./ClienteRowButtons";
 import {
   CopyPortalLinkButton,
@@ -238,6 +240,9 @@ export default async function VerClientePage({ params, searchParams }: Props) {
     profiles: { full_name: string } | null;
   }[];
   const agregarNotaConCliente = agregarNota.bind(null, id);
+  // Mismo orden que resolveClientEmail: contacto principal, luego ficha.
+  const correoEnvio =
+    contacts.find((c) => c.email)?.email ?? client.primary_email ?? null;
   const hoy = new Date().toISOString().slice(0, 10);
 
   const formatDateTime = (value: string) =>
@@ -591,6 +596,22 @@ export default async function VerClientePage({ params, searchParams }: Props) {
                             assignment.status}
                         </span>
                         <CopyLinkButton compact token={assignment.token} />
+                        {escribir && assignment.status !== "completed" ? (
+                          <SendLinkButton
+                            compact
+                            label="Enviar liga por correo"
+                            confirmMessage={
+                              correoEnvio
+                                ? `¿Enviar la liga del formulario "${assignment.form_name}" a ${correoEnvio}?`
+                                : `El cliente no tiene correo registrado; el envío fallará. ¿Intentar de todos modos?`
+                            }
+                            onSend={enviarLigaFormulario.bind(
+                              null,
+                              assignment.id,
+                              `/clientes/${id}`,
+                            )}
+                          />
+                        ) : null}
                         <Link
                           aria-label="Ver respuestas"
                           className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
@@ -644,6 +665,16 @@ export default async function VerClientePage({ params, searchParams }: Props) {
               <div className="flex shrink-0 flex-wrap items-center gap-2">
                 {client.portal_enabled ? (
                   <CopyPortalLinkButton token={client.portal_token} />
+                ) : null}
+                {escribir && client.portal_enabled ? (
+                  <SendLinkButton
+                    confirmMessage={
+                      correoEnvio
+                        ? `¿Enviar la liga del portal a ${correoEnvio}?`
+                        : `El cliente no tiene correo registrado; el envío fallará. ¿Intentar de todos modos?`
+                    }
+                    onSend={enviarLigaPortal.bind(null, id)}
+                  />
                 ) : null}
                 {escribir && client.portal_enabled ? (
                   <RegenerarLigaButton clientId={id} nombre={client.display_name} />

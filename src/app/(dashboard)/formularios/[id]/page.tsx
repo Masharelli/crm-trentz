@@ -11,8 +11,9 @@ import {
 } from "@/lib/forms";
 import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
+import SendLinkButton from "../../components/SendLinkButton";
 import SubmitButton from "../../components/SubmitButton";
-import { asignarFormulario } from "../actions";
+import { asignarFormulario, enviarLigaFormulario } from "../actions";
 import {
   EliminarAsignacionButton,
   ReabrirAsignacionButton,
@@ -219,6 +220,18 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
                           {assignmentStatusLabel[assignment.status] ?? assignment.status}
                         </span>
                         <CopyLinkButton compact token={assignment.token} />
+                        {escribir && assignment.status !== "completed" ? (
+                          <SendLinkButton
+                            compact
+                            label="Enviar liga por correo"
+                            confirmMessage={`¿Enviar la liga del formulario por correo a ${assignment.clients?.display_name ?? "este cliente"}? Se usará su contacto principal o el correo de su ficha.`}
+                            onSend={enviarLigaFormulario.bind(
+                              null,
+                              assignment.id,
+                              `/formularios/${id}`,
+                            )}
+                          />
+                        ) : null}
                         <Link
                           aria-label="Ver respuestas"
                           className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"

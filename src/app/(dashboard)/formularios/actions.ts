@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
+import { getBaseUrl, resolveClientEmail, sendLinkEmail } from "@/lib/link-emails";
 import { createClient } from "@/lib/supabase/server";
 
 const FIELD_TYPES = [
@@ -285,6 +286,67 @@ export async function asignarFormulario(formData: FormData) {
   redirect(
     `${destino}?toast=${encodeURIComponent("Formulario asignado. Copia la liga y compártela con el cliente.")}`,
   );
+}
+
+export async function enviarLigaFormulario(
+  assignmentId: string,
+  backPath: string,
+) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const { data: assignment } = await supabase
+    .from("form_assignments")
+    .select("id, form_name, token, status, client_id, clients(display_name)")
+    .eq("id", assignmentId)
+    .maybeSingle();
+
+  if (!assignment) {
+    redirect(`${backPath}?error=${encodeURIComponent("La asignación no existe.")}`);
+  }
+
+  if (assignment.status === "completed") {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("Este formulario ya fue enviado; la liga está cerrada.")}`,
+    );
+  }
+
+  const recipient = await resolveClientEmail(supabase, assignment.client_id);
+
+  if (!recipient) {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("El cliente no tiene correo registrado. Agrégalo en su ficha o en sus contactos.")}`,
+    );
+  }
+
+  const clientName =
+    (assignment.clients as unknown as { display_name: string } | null)
+      ?.display_name ?? "";
+  const url = `${await getBaseUrl()}/f/${assignment.token}`;
+
+  const result = await sendLinkEmail({
+    actorId: user.id,
+    clientId: assignment.client_id,
+    recipient,
+    subject: `Formulario pendiente: ${assignment.form_name}`,
+    heading: "Tienes un formulario por completar",
+    intro: `Hola${clientName ? ` ${clientName}` : ""}, te compartimos la liga para responder el formulario "${assignment.form_name}". Tu avance se guarda automáticamente: puedes salir y retomarlo cuando quieras desde esta misma liga.`,
+    buttonLabel: "Responder formulario",
+    url,
+    activityDescription: `Liga del formulario "${assignment.form_name}" enviada por correo a ${recipient}`,
+  });
+
+  if (!result.ok) {
+    redirect(`${backPath}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  revalidatePath("/correos");
+  revalidatePath(`/clientes/${assignment.client_id}`);
+  redirect(`${backPath}?toast=${encodeURIComponent(`Liga enviada a ${recipient}`)}`);
 }
 
 export async function reabrirAsignacion(assignmentId: string, backPath: string) {

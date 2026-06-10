@@ -4,6 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
+import { getBaseUrl, resolveClientEmail, sendLinkEmail } from "@/lib/link-emails";
 import { createClient } from "@/lib/supabase/server";
 
 const clienteSchema = z.object({
@@ -304,10 +305,16 @@ export async function setPortalEnabled(clientId: string, enabled: boolean) {
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("clients")
     .update({ portal_enabled: enabled })
     .eq("id", clientId);
+
+  if (error) {
+    redirect(
+      `/clientes/${clientId}?error=${encodeURIComponent(`No se pudo ${enabled ? "activar" : "desactivar"} el portal. (${error.message})`)}`,
+    );
+  }
 
   await logActivity(supabase, {
     actor_id: user.id,
@@ -332,10 +339,16 @@ export async function regenerarLigaPortal(clientId: string) {
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("clients")
     .update({ portal_token: crypto.randomUUID() })
     .eq("id", clientId);
+
+  if (error) {
+    redirect(
+      `/clientes/${clientId}?error=${encodeURIComponent(`No se pudo regenerar la liga. (${error.message})`)}`,
+    );
+  }
 
   await logActivity(supabase, {
     actor_id: user.id,
@@ -347,6 +360,63 @@ export async function regenerarLigaPortal(clientId: string) {
   });
 
   revalidatePath(`/clientes/${clientId}`);
+}
+
+export async function enviarLigaPortal(clientId: string) {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) redirect("/login");
+
+  const backPath = `/clientes/${clientId}`;
+
+  const { data: client } = await supabase
+    .from("clients")
+    .select("id, display_name, portal_token, portal_enabled")
+    .eq("id", clientId)
+    .maybeSingle();
+
+  if (!client) {
+    redirect(`/clientes?error=${encodeURIComponent("El cliente no existe.")}`);
+  }
+
+  if (!client.portal_enabled) {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("Activa el portal antes de enviar la liga.")}`,
+    );
+  }
+
+  const recipient = await resolveClientEmail(supabase, clientId);
+
+  if (!recipient) {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("El cliente no tiene correo registrado. Agrégalo en su ficha o en sus contactos.")}`,
+    );
+  }
+
+  const url = `${await getBaseUrl()}/p/${client.portal_token}`;
+
+  const result = await sendLinkEmail({
+    actorId: user.id,
+    clientId,
+    recipient,
+    subject: "Tu portal de cliente en Trentz",
+    heading: "Bienvenido a tu portal de cliente",
+    intro: `Hola ${client.display_name}, desde tu portal puedes consultar en cualquier momento tus pagos pendientes, tus documentos y los formularios por completar. Guarda esta liga: es personal y no necesitas cuenta ni contraseña.`,
+    buttonLabel: "Entrar a mi portal",
+    url,
+    activityDescription: `Liga del portal enviada por correo a ${recipient}`,
+  });
+
+  if (!result.ok) {
+    redirect(`${backPath}?error=${encodeURIComponent(result.error)}`);
+  }
+
+  revalidatePath("/correos");
+  revalidatePath(backPath);
+  redirect(`${backPath}?toast=${encodeURIComponent(`Liga enviada a ${recipient}`)}`);
 }
 
 // ── Bitacora de notas ───────────────────────────────────────────
