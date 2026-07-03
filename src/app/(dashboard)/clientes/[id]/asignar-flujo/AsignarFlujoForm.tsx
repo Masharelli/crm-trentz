@@ -86,11 +86,11 @@ export default function AsignarFlujoForm({ clientId, flows }: Props) {
         </p>
 
         {(selectedFlow?.task_flow_steps ?? []).map((step, index) => (
-          <div className="flex items-center gap-3" key={step.id}>
+          <div className="flex flex-wrap items-center gap-3" key={step.id}>
             <span className="grid size-7 shrink-0 place-items-center rounded-md bg-zinc-100 text-xs font-semibold text-zinc-500">
               {index + 1}
             </span>
-            <p className="flex-1 truncate text-sm font-medium text-zinc-950">
+            <p className="flex-1 basis-32 truncate text-sm font-medium text-zinc-950">
               {step.name}
             </p>
             <input
@@ -114,7 +114,7 @@ export default function AsignarFlujoForm({ clientId, flows }: Props) {
       <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
         <Link
           href={`/clientes/${clientId}`}
-          className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+          className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
         >
           Cancelar
         </Link>

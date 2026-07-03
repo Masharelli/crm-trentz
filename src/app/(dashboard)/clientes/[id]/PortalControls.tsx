@@ -21,7 +21,7 @@ export function CopyPortalLinkButton({ token }: { token: string }) {
 
   return (
     <button
-      className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition ${
+      className={`inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition ${
         copied
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
           : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
@@ -63,7 +63,7 @@ export function PortalToggleButton({
 
   return (
     <button
-      className={`inline-flex h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition disabled:opacity-50 ${
+      className={`inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md px-3 text-xs font-semibold transition disabled:opacity-50 ${
         enabled
           ? "border border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"
           : "bg-zinc-950 text-white hover:bg-zinc-800"
@@ -108,7 +108,7 @@ export function RegenerarLigaButton({
   return (
     <button
       aria-label="Regenerar liga del portal"
-      className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50"
+      className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100 disabled:opacity-50"
       disabled={isPending}
       onClick={handleRegenerate}
       title="Invalida la liga actual y genera una nueva"

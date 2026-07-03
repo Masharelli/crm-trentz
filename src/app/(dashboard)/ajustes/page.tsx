@@ -84,7 +84,7 @@ export default async function AjustesPage({ searchParams }: Props) {
               </p>
             </div>
             <div className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1">
                   <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">
                     Nombre
@@ -105,7 +105,7 @@ export default async function AjustesPage({ searchParams }: Props) {
                   Rol
                 </p>
                 <span
-                  className={`inline-flex h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ring-1 ${roleClass[me?.role ?? "staff"] ?? roleClass.staff}`}
+                  className={`inline-flex whitespace-nowrap h-7 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold ring-1 ${roleClass[me?.role ?? "staff"] ?? roleClass.staff}`}
                 >
                   <ShieldCheck size={13} />
                   {roleLabel[me?.role ?? "staff"] ?? me?.role}
@@ -163,7 +163,7 @@ export default async function AjustesPage({ searchParams }: Props) {
                           />
                         ) : (
                           <span
-                            className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${roleClass[member.role] ?? roleClass.staff}`}
+                            className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${roleClass[member.role] ?? roleClass.staff}`}
                           >
                             {roleLabel[member.role] ?? member.role}
                           </span>
@@ -174,7 +174,7 @@ export default async function AjustesPage({ searchParams }: Props) {
                       </td>
                       <td className="px-5 py-4">
                         <span
-                          className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${
+                          className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${
                             member.is_active
                               ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
                               : "bg-zinc-100 text-zinc-700 ring-zinc-200"

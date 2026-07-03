@@ -47,11 +47,11 @@ export default async function NuevoContactoPage({ params, searchParams }: Props)
           >
             <ArrowLeft size={17} />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
               Nuevo contacto
             </h1>
-            <p className="text-sm text-zinc-500">{client.display_name}</p>
+            <p className="truncate text-sm text-zinc-500">{client.display_name}</p>
           </div>
         </div>
       </header>
@@ -97,7 +97,7 @@ export default async function NuevoContactoPage({ params, searchParams }: Props)
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>Correo</label>
                   <input
@@ -118,7 +118,7 @@ export default async function NuevoContactoPage({ params, searchParams }: Props)
                 </div>
               </div>
 
-              <label className="inline-flex items-center gap-2 text-sm text-zinc-600">
+              <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm text-zinc-600">
                 <input
                   className="size-4 rounded border-zinc-300 accent-zinc-950"
                   name="is_primary"
@@ -128,14 +128,14 @@ export default async function NuevoContactoPage({ params, searchParams }: Props)
               </label>
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+            <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
               <p className="text-xs text-zinc-400">
                 Los campos con <span className="text-rose-500">*</span> son requeridos
               </p>
               <div className="flex items-center gap-3">
                 <Link
                   href={`/clientes/${id}`}
-                  className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                  className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                 >
                   Cancelar
                 </Link>

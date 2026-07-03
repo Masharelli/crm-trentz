@@ -68,7 +68,7 @@ export default async function RespuestasPage({ params }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href={`/clientes/${assignment.client_id}`}
@@ -77,8 +77,8 @@ export default async function RespuestasPage({ params }: Props) {
             >
               <ArrowLeft size={17} />
             </Link>
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-semibold text-zinc-950 sm:text-2xl">
                 {assignment.form_name}
               </h1>
               <p className="text-sm text-zinc-500">
@@ -87,21 +87,21 @@ export default async function RespuestasPage({ params }: Props) {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <span
-              className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
+              className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
             >
               {assignmentStatusLabel[assignment.status] ?? assignment.status}
             </span>
             <a
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
               href={`/formularios/respuestas/${assignment.id}/exportar?formato=csv`}
             >
               <FileDown size={13} />
               CSV
             </a>
             <a
-              className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
               href={`/formularios/respuestas/${assignment.id}/exportar?formato=md`}
             >
               <FileDown size={13} />
@@ -135,7 +135,7 @@ export default async function RespuestasPage({ params }: Props) {
             {fields.map((field) =>
               field.field_type === "section" ? (
                 <div
-                  className="border-y border-zinc-100 bg-zinc-50 px-6 py-3 first:border-t-0"
+                  className="border-y border-zinc-100 bg-zinc-50 px-4 py-3 first:border-t-0 sm:px-6"
                   key={field.id}
                 >
                   <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
@@ -144,7 +144,7 @@ export default async function RespuestasPage({ params }: Props) {
                 </div>
               ) : (
                 <div
-                  className="border-b border-zinc-100 px-6 py-4 last:border-b-0"
+                  className="border-b border-zinc-100 px-4 py-4 last:border-b-0 sm:px-6"
                   key={field.id}
                 >
                   <p className="text-xs font-medium uppercase tracking-wider text-zinc-400">

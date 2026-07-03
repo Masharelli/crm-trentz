@@ -14,9 +14,9 @@ export default function Loading() {
       </header>
 
       <div className="flex-1 px-4 py-6 sm:px-6 lg:px-8">
-        <div className="flex gap-3">
-          <div className="h-11 w-72 animate-pulse rounded-md bg-zinc-100" />
-          <div className="h-11 w-44 animate-pulse rounded-md bg-zinc-100" />
+        <div className="flex flex-col gap-3 sm:flex-row">
+          <div className="h-11 w-full animate-pulse rounded-md bg-zinc-100 sm:w-72" />
+          <div className="h-11 w-full animate-pulse rounded-md bg-zinc-100 sm:w-44" />
         </div>
 
         <div className="mt-5 overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">

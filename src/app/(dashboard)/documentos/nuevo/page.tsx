@@ -117,7 +117,7 @@ export default async function NuevoDocumentoPage({ searchParams }: Props) {
 
               <div className="space-y-1.5">
                 <label className={labelClass}>Tipo de documento</label>
-                <select className="h-11 w-72 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100" name="document_type" defaultValue="other">
+                <select className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 sm:w-72" name="document_type" defaultValue="other">
                   <option value="contract">Contrato</option>
                   <option value="identification">Identificacion</option>
                   <option value="tax">Fiscal / Factura</option>
@@ -129,10 +129,10 @@ export default async function NuevoDocumentoPage({ searchParams }: Props) {
             </div>
 
             {/* Acciones */}
-            <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+            <div className="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
               <Link
                 href="/documentos"
-                className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
               >
                 Cancelar
               </Link>

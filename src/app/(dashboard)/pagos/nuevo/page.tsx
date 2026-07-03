@@ -124,7 +124,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>
                     Monto <span className="text-rose-500">*</span>
@@ -173,7 +173,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
               <div className="space-y-1.5">
                 <label className={labelClass}>Dias de aviso</label>
                 <input
-                  className="h-11 w-48 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+                  className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none placeholder:text-zinc-400 focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 sm:w-48"
                   defaultValue={3}
                   max={90}
                   min={0}
@@ -187,7 +187,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
             {/* ── Fechas y estado ────────────────────────────── */}
             {sectionHeader("Fechas y estado")}
             <div className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>
                     Fecha de vencimiento{" "}
@@ -227,7 +227,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                   </span>
                 </label>
                 <input
-                  className="h-11 w-72 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+                  className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 sm:w-72"
                   name="paid_at"
                   type="date"
                 />
@@ -247,7 +247,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
                 Primer mes sin cobro
               </label>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>Monto segundo mes</label>
                   <input
@@ -286,7 +286,7 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
             <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
               <Link
                 href="/pagos"
-                className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
               >
                 Cancelar
               </Link>

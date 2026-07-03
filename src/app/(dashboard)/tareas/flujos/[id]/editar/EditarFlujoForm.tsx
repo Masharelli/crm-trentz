@@ -34,7 +34,7 @@ function DeleteButton() {
 
   return (
     <button
-      className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+      className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
       disabled={pending}
       type="submit"
     >
@@ -243,7 +243,7 @@ export default function EditarFlujoForm({
           ) : null}
 
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
+            className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
             onClick={addStep}
             type="button"
           >
@@ -253,14 +253,14 @@ export default function EditarFlujoForm({
         </div>
 
         {/* Acciones */}
-        <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+        <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
           <p className="text-xs text-zinc-400">
             Los campos con <span className="text-rose-500">*</span> son requeridos
           </p>
           <div className="flex items-center gap-3">
             <Link
               href="/tareas/flujos"
-              className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
             >
               Cancelar
             </Link>

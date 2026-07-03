@@ -91,7 +91,7 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3">
             <Link
               href="/formularios"
@@ -100,8 +100,8 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
             >
               <ArrowLeft size={17} />
             </Link>
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-semibold text-zinc-950 sm:text-2xl">
                 {form.name}
               </h1>
               <p className="text-sm text-zinc-500">
@@ -109,11 +109,11 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             {assignments.length > 0 ? (
               <a
                 href={`/formularios/${id}/exportar`}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
                 title="Descargar CSV con las respuestas de todos los clientes"
               >
                 <FileDown size={14} />
@@ -123,7 +123,7 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
             {escribir ? (
               <Link
                 href={`/formularios/${id}/editar`}
-                className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                className="inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
               >
                 <Pencil size={14} />
                 Editar
@@ -150,7 +150,7 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
                   Asignar a cliente
                 </p>
               </div>
-              <form action={asignarFormulario} className="flex flex-col gap-3 px-6 py-5 sm:flex-row sm:items-center">
+              <form action={asignarFormulario} className="flex flex-col gap-3 px-4 py-5 sm:flex-row sm:items-center sm:px-6">
                 <input name="form_id" type="hidden" value={id} />
                 <input name="from" type="hidden" value="formulario" />
                 <select
@@ -197,7 +197,7 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
 
                   return (
                     <div
-                      className="flex flex-col gap-2 px-6 py-3.5 sm:flex-row sm:items-center sm:gap-3"
+                      className="flex flex-col gap-2 px-4 py-3.5 sm:flex-row sm:items-center sm:gap-3 sm:px-6"
                       key={assignment.id}
                     >
                       <div className="min-w-0 flex-1">
@@ -213,9 +213,9 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
                             : `${answered} de ${total} respondidas · asignado el ${formatDate(assignment.created_at)}`}
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
+                          className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
                         >
                           {assignmentStatusLabel[assignment.status] ?? assignment.status}
                         </span>
@@ -279,7 +279,7 @@ export default async function VerFormularioPage({ params, searchParams }: Props)
                     {field.label}
                   </p>
                 ) : (
-                  <div className="flex items-start gap-3 px-6 py-2.5" key={field.id}>
+                  <div className="flex items-start gap-3 px-4 py-2.5 sm:px-6" key={field.id}>
                     <p className="flex-1 text-sm text-zinc-900">
                       {field.label}
                       {field.is_required ? (

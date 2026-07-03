@@ -13,7 +13,7 @@ export default function SubmitButton({ label, pendingLabel }: Props) {
 
   return (
     <button
-      className="inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+      className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
       disabled={pending}
       type="submit"
     >

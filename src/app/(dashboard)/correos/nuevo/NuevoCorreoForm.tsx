@@ -126,10 +126,10 @@ export default function NuevoCorreoForm({
           </div>
 
           {/* Acciones */}
-          <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
             <Link
               href="/correos"
-              className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex h-10 whitespace-nowrap items-center justify-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
             >
               Cancelar
             </Link>

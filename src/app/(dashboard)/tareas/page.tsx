@@ -73,7 +73,7 @@ export default async function TareasPage({ searchParams }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Tareas
@@ -82,10 +82,10 @@ export default async function TareasPage({ searchParams }: Props) {
               {tasks.length} registros
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <Link
               href="/tareas/flujos"
-              className="inline-flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex h-11 whitespace-nowrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
             >
               <Workflow size={16} />
               Flujos
@@ -93,7 +93,7 @@ export default async function TareasPage({ searchParams }: Props) {
             {escribir ? (
               <Link
                 href="/tareas/nueva"
-                className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="inline-flex h-11 whitespace-nowrap items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 <Plus size={17} />
                 Nueva tarea
@@ -172,11 +172,11 @@ export default async function TareasPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           {task.client_flows ? (
-                            <span className="inline-flex h-7 items-center rounded-md bg-violet-50 px-2.5 text-xs font-semibold text-violet-800 ring-1 ring-violet-200">
+                            <span className="inline-flex whitespace-nowrap h-7 items-center rounded-md bg-violet-50 px-2.5 text-xs font-semibold text-violet-800 ring-1 ring-violet-200">
                               {task.client_flows.name}
                             </span>
                           ) : (
-                            <span className="inline-flex h-7 items-center rounded-md bg-zinc-100 px-2.5 text-xs font-semibold text-zinc-600 ring-1 ring-zinc-200">
+                            <span className="inline-flex whitespace-nowrap h-7 items-center rounded-md bg-zinc-100 px-2.5 text-xs font-semibold text-zinc-600 ring-1 ring-zinc-200">
                               Suelta
                             </span>
                           )}
@@ -186,7 +186,7 @@ export default async function TareasPage({ searchParams }: Props) {
                             <span
                               className={
                                 vencida
-                                  ? "inline-flex h-7 items-center rounded-md bg-rose-50 px-2.5 text-xs font-semibold text-rose-700 ring-1 ring-rose-200"
+                                  ? "inline-flex whitespace-nowrap h-7 items-center rounded-md bg-rose-50 px-2.5 text-xs font-semibold text-rose-700 ring-1 ring-rose-200"
                                   : "text-zinc-600"
                               }
                             >
@@ -233,7 +233,7 @@ export default async function TareasPage({ searchParams }: Props) {
               {escribir ? (
                 <Link
                   href="/tareas/nueva"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={16} />
                   Nueva tarea

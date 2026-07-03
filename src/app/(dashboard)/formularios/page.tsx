@@ -41,7 +41,7 @@ export default async function FormulariosPage() {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Formularios
@@ -52,7 +52,7 @@ export default async function FormulariosPage() {
           </div>
           <Link
             href="/formularios/nuevo"
-            className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
           >
             <Plus size={17} />
             Nuevo formulario
@@ -131,7 +131,7 @@ export default async function FormulariosPage() {
               </p>
               <Link
                 href="/formularios/nuevo"
-                className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 <Plus size={16} />
                 Nuevo formulario

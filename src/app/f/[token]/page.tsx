@@ -42,7 +42,7 @@ function MensajeFinal({
   description: string;
 }) {
   return (
-    <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center shadow-sm">
+    <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-16 text-center shadow-sm sm:px-6">
       {icon}
       <p className="text-lg font-semibold text-zinc-950">{title}</p>
       <p className="max-w-md text-sm text-zinc-500">{description}</p>

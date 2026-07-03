@@ -39,7 +39,7 @@ export default function PagosFilter() {
   }
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+    <div className="flex flex-col gap-3 xl:flex-row xl:items-center xl:justify-between">
       <div className="flex flex-wrap gap-1 rounded-lg bg-zinc-100 p-1">
         {statuses.map((s) => (
           <a
@@ -58,7 +58,7 @@ export default function PagosFilter() {
 
       <form
         onSubmit={handleSearch}
-        className="flex h-10 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 sm:w-64"
+        className="flex h-10 w-full items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-500 xl:w-64 xl:shrink-0"
       >
         <Search size={16} />
         <input

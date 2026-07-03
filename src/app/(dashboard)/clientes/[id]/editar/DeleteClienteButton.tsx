@@ -32,7 +32,7 @@ export default function DeleteClienteButton({
       disabled={isPending}
       onClick={handleDelete}
       type="button"
-      className="inline-flex h-10 items-center gap-2 rounded-md border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
+      className="inline-flex h-10 shrink-0 items-center gap-2 whitespace-nowrap rounded-md border border-rose-200 bg-rose-50 px-4 text-sm font-semibold text-rose-700 transition hover:bg-rose-100 disabled:opacity-50"
     >
       {isPending ? (
         <LoaderCircle className="animate-spin" size={16} />

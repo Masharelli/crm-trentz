@@ -33,7 +33,7 @@ export default function Error({
         </div>
         <div className="flex items-center gap-3">
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
             onClick={reset}
             type="button"
           >
@@ -42,7 +42,7 @@ export default function Error({
           </button>
           <Link
             href="/"
-            className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+            className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
           >
             Ir al inicio
           </Link>

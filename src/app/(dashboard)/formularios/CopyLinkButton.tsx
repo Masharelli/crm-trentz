@@ -43,7 +43,7 @@ export default function CopyLinkButton({ token, compact = false }: Props) {
 
   return (
     <button
-      className={`inline-flex h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition ${
+      className={`inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition ${
         copied
           ? "border-emerald-200 bg-emerald-50 text-emerald-700"
           : "border-zinc-200 bg-white text-zinc-700 hover:bg-zinc-100"

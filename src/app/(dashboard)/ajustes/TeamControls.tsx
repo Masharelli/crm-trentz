@@ -22,7 +22,7 @@ export function RoleSelect({
 
   return (
     <select
-      className="h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 disabled:opacity-50"
+      className="h-10 rounded-md border border-zinc-200 bg-white px-2.5 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 disabled:opacity-50"
       defaultValue={currentRole}
       disabled={isPending}
       onChange={(e) => {
@@ -66,7 +66,7 @@ export function ActiveToggle({
 
   return (
     <button
-      className={`inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition disabled:opacity-50 ${
+      className={`inline-flex whitespace-nowrap h-10 items-center gap-1.5 rounded-md border px-3 text-xs font-semibold transition disabled:opacity-50 ${
         isActive
           ? "border-rose-200 bg-rose-50 text-rose-700 hover:bg-rose-100"
           : "border-emerald-200 bg-emerald-50 text-emerald-700 hover:bg-emerald-100"

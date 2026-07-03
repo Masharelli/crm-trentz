@@ -138,7 +138,7 @@ export default function PublicForm({
 
   if (submitted) {
     return (
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center shadow-sm">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-16 text-center shadow-sm sm:px-6">
         <div className="grid size-14 place-items-center rounded-full bg-emerald-50 text-emerald-600">
           <CheckCircle2 size={28} />
         </div>
@@ -195,7 +195,7 @@ export default function PublicForm({
 
       {/* Preguntas */}
       <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-        <div className="border-b border-zinc-100 px-6 py-5">
+        <div className="border-b border-zinc-100 px-4 py-5 sm:px-6">
           <h1 className="text-xl font-semibold text-zinc-950">{formName}</h1>
           {clientName ? (
             <p className="mt-1 text-sm text-zinc-500">Para {clientName}</p>
@@ -212,7 +212,7 @@ export default function PublicForm({
           if (field.field_type === "section") {
             return (
               <div
-                className="border-y border-zinc-100 bg-zinc-50 px-6 py-3"
+                className="border-y border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6"
                 key={field.id}
               >
                 <p className="text-xs font-semibold uppercase tracking-widest text-zinc-500">
@@ -228,7 +228,7 @@ export default function PublicForm({
 
           return (
             <div
-              className="space-y-1.5 border-b border-zinc-100 px-6 py-5 last:border-b-0"
+              className="space-y-1.5 border-b border-zinc-100 px-4 py-5 last:border-b-0 sm:px-6"
               id={`field-${field.id}`}
               key={field.id}
             >
@@ -336,7 +336,7 @@ export default function PublicForm({
           </div>
         ) : null}
         <button
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
+          className="inline-flex whitespace-nowrap h-12 w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-60"
           disabled={submitting}
           onClick={handleSubmit}
           type="button"

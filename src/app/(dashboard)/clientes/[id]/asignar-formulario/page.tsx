@@ -55,11 +55,11 @@ export default async function AsignarFormularioPage({ params, searchParams }: Pr
           >
             <ArrowLeft size={17} />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
               Asignar formulario
             </h1>
-            <p className="text-sm text-zinc-500">{client.display_name}</p>
+            <p className="truncate text-sm text-zinc-500">{client.display_name}</p>
           </div>
         </div>
       </header>
@@ -82,7 +82,7 @@ export default async function AsignarFormularioPage({ params, searchParams }: Pr
               </p>
               <Link
                 href="/formularios/nuevo"
-                className="mt-4 inline-flex h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="mt-4 inline-flex whitespace-nowrap h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
               >
                 Nuevo formulario
               </Link>
@@ -126,7 +126,7 @@ export default async function AsignarFormularioPage({ params, searchParams }: Pr
               <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
                 <Link
                   href={`/clientes/${id}`}
-                  className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                  className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                 >
                   Cancelar
                 </Link>

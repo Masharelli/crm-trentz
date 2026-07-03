@@ -105,7 +105,7 @@ function MemberCard({
         ) : null}
       </div>
       <span
-        className={`mt-2.5 inline-flex h-6 items-center rounded-md px-2 text-xs font-semibold ring-1 ${statusClass[member.client.status] ?? statusClass.prospect}`}
+        className={`mt-2.5 inline-flex whitespace-nowrap h-6 items-center rounded-md px-2 text-xs font-semibold ring-1 ${statusClass[member.client.status] ?? statusClass.prospect}`}
       >
         {statusLabel[member.client.status] ?? member.client.status}
       </span>
@@ -267,7 +267,7 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
           </p>
           <Link
             href={`/funnels/${funnelId}/editar`}
-            className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
           >
             <Pencil size={15} />
             Editar funnel

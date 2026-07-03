@@ -74,8 +74,8 @@ export default async function FunnelPage({ params }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center justify-between gap-4">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/funnels"
               className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
@@ -83,11 +83,11 @@ export default async function FunnelPage({ params }: Props) {
             >
               <ArrowLeft size={17} />
             </Link>
-            <div>
-              <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
+            <div className="min-w-0">
+              <h1 className="truncate text-xl font-semibold text-zinc-950 sm:text-2xl">
                 {funnel.name}
               </h1>
-              <p className="text-sm text-zinc-500">
+              <p className="truncate text-sm text-zinc-500">
                 {funnel.description ??
                   `${members.length} ${members.length === 1 ? "cliente" : "clientes"} en el funnel`}
               </p>
@@ -96,7 +96,7 @@ export default async function FunnelPage({ params }: Props) {
           <div className="flex items-center gap-2">
             <Link
               href={`/funnels/${funnel.id}/editar`}
-              className="inline-flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+              className="inline-flex h-11 whitespace-nowrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
             >
               <Pencil size={15} />
               Editar

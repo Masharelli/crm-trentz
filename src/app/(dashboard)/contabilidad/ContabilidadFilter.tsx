@@ -37,7 +37,7 @@ export default function ContabilidadFilter() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-[140px_120px_180px_minmax(220px,1fr)_auto] md:items-end"
+      className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-2 md:items-end xl:grid-cols-[140px_120px_180px_minmax(220px,1fr)_auto]"
     >
       <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
         Mes
@@ -92,7 +92,7 @@ export default function ContabilidadFilter() {
       </label>
 
       <button
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+        className="inline-flex h-10 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 md:w-auto md:justify-self-start xl:justify-self-auto"
         type="submit"
       >
         <Search size={16} />

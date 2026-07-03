@@ -257,7 +257,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3">
+          <div className="flex min-w-0 items-center gap-3">
             <Link
               href="/clientes"
               className="grid size-9 shrink-0 place-items-center rounded-md border border-zinc-200 text-zinc-600 hover:bg-zinc-50"
@@ -265,17 +265,17 @@ export default async function VerClientePage({ params, searchParams }: Props) {
             >
               <ArrowLeft size={17} />
             </Link>
-            <div>
+            <div className="min-w-0">
               <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
                 Detalle del cliente
               </h1>
-              <p className="text-sm text-zinc-500">{client.display_name}</p>
+              <p className="truncate text-sm text-zinc-500">{client.display_name}</p>
             </div>
           </div>
           {escribir ? (
             <Link
               href={`/clientes/${id}/editar`}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+              className="inline-flex h-9 whitespace-nowrap shrink-0 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
             >
               <Pencil size={14} />
               Editar
@@ -301,13 +301,13 @@ export default async function VerClientePage({ params, searchParams }: Props) {
             </div>
             <div className="space-y-5 px-6 py-6">
               <Field label="Nombre comercial">{client.display_name}</Field>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Razon social">{client.legal_name ?? "—"}</Field>
                 <Field label="RFC">{client.tax_id ?? "—"}</Field>
               </div>
               <Field label="Estado">
                 <span
-                  className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
+                  className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
                 >
                   {statusLabel[client.status] ?? client.status}
                 </span>
@@ -323,7 +323,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
               </p>
             </div>
             <div className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Correo principal">
                   {client.primary_email ? (
                     <a
@@ -349,7 +349,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
                   )}
                 </Field>
               </div>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Sitio web">
                   {client.website ? (
                     <a
@@ -371,14 +371,14 @@ export default async function VerClientePage({ params, searchParams }: Props) {
 
           {/* Contactos */}
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
                 Contactos
               </p>
               {escribir ? (
                 <Link
                   href={`/clientes/${id}/contactos/nuevo`}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={13} />
                   Agregar contacto
@@ -406,7 +406,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
                       <p className="truncate text-sm font-medium text-zinc-950">
                         {contact.full_name}
                         {contact.is_primary ? (
-                          <span className="ml-2 inline-flex h-5 items-center rounded-md bg-cyan-50 px-1.5 text-[11px] font-semibold text-cyan-800 ring-1 ring-cyan-200">
+                          <span className="ml-2 inline-flex whitespace-nowrap h-5 items-center rounded-md bg-cyan-50 px-1.5 text-[11px] font-semibold text-cyan-800 ring-1 ring-cyan-200">
                             Principal
                           </span>
                         ) : null}
@@ -443,22 +443,22 @@ export default async function VerClientePage({ params, searchParams }: Props) {
 
           {/* Tareas */}
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
                 Tareas
               </p>
               {escribir ? (
-                <div className="flex items-center gap-2">
+                <div className="flex flex-wrap items-center gap-2">
                   <Link
                     href={`/clientes/${id}/asignar-flujo`}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                    className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-100"
                   >
                     <Workflow size={13} />
                     Asignar flujo
                   </Link>
                   <Link
                     href={`/tareas/nueva?client_id=${id}&from=cliente`}
-                    className="inline-flex h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                    className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
                   >
                     <Plus size={13} />
                     Nueva tarea
@@ -484,11 +484,11 @@ export default async function VerClientePage({ params, searchParams }: Props) {
 
                   return (
                     <div key={flow.id} className="py-3">
-                      <div className="flex items-center gap-3 px-6 pb-2">
-                        <span className="inline-flex h-7 items-center rounded-md bg-violet-50 px-2.5 text-xs font-semibold text-violet-800 ring-1 ring-violet-200">
+                      <div className="flex flex-wrap items-center gap-3 px-6 pb-2">
+                        <span className="inline-flex whitespace-nowrap h-7 items-center rounded-md bg-violet-50 px-2.5 text-xs font-semibold text-violet-800 ring-1 ring-violet-200">
                           {flow.name}
                         </span>
-                        <div className="flex flex-1 items-center gap-3">
+                        <div className="flex flex-1 basis-40 items-center gap-3">
                           <div className="h-1.5 flex-1 overflow-hidden rounded-full bg-zinc-100">
                             <div
                               className="h-full rounded-full bg-emerald-500 transition-all"
@@ -543,14 +543,14 @@ export default async function VerClientePage({ params, searchParams }: Props) {
 
           {/* Formularios */}
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
               <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
                 Formularios
               </p>
               {escribir ? (
                 <Link
                   href={`/clientes/${id}/asignar-formulario`}
-                  className="inline-flex h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
+                  className="inline-flex whitespace-nowrap h-8 items-center gap-1.5 rounded-md bg-zinc-950 px-3 text-xs font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <ClipboardList size={13} />
                   Asignar formulario
@@ -588,9 +588,9 @@ export default async function VerClientePage({ params, searchParams }: Props) {
                             : `${answered} de ${total} respondidas`}
                         </p>
                       </div>
-                      <div className="flex shrink-0 items-center gap-2">
+                      <div className="flex shrink-0 flex-wrap items-center gap-2">
                         <span
-                          className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
+                          className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${assignmentStatusClass[assignment.status] ?? assignmentStatusClass.pending}`}
                         >
                           {assignmentStatusLabel[assignment.status] ??
                             assignment.status}
@@ -648,7 +648,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
                 Portal del cliente
               </p>
               <span
-                className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${
+                className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${
                   client.portal_enabled
                     ? "bg-emerald-50 text-emerald-800 ring-emerald-200"
                     : "bg-zinc-100 text-zinc-700 ring-zinc-200"

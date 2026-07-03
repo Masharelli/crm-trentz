@@ -161,12 +161,12 @@ export default function FormBuilder({
       <input name="fields" type="hidden" value={JSON.stringify(payload)} />
 
       {/* Informacion general */}
-      <div className="border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+      <div className="border-b border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
           Informacion general
         </p>
       </div>
-      <div className="space-y-5 px-6 py-6">
+      <div className="space-y-5 px-4 py-6 sm:px-6">
         <div className="space-y-1.5">
           <label className={labelClass}>
             Nombre del formulario <span className="text-rose-500">*</span>
@@ -200,12 +200,12 @@ export default function FormBuilder({
       </div>
 
       {/* Preguntas */}
-      <div className="border-y border-zinc-100 bg-zinc-50 px-6 py-3">
+      <div className="border-y border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6">
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
           Preguntas <span className="text-rose-400">*</span>
         </p>
       </div>
-      <div className="space-y-3 px-6 py-6">
+      <div className="space-y-3 px-4 py-6 sm:px-6">
         <p className="text-sm text-zinc-500">
           Las secciones funcionan como separadores visuales para agrupar
           preguntas. El cliente responde desde una liga pública, sin necesidad
@@ -284,7 +284,7 @@ export default function FormBuilder({
                   ) : null}
 
                   {!isSection ? (
-                    <label className="inline-flex items-center gap-2 text-sm text-zinc-600">
+                    <label className="inline-flex whitespace-nowrap items-center gap-2 text-sm text-zinc-600">
                       <input
                         checked={field.is_required}
                         className="size-4 rounded border-zinc-300 accent-zinc-950"
@@ -338,7 +338,7 @@ export default function FormBuilder({
 
         <div className="flex flex-wrap items-center gap-2">
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
+            className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
             onClick={() => addField()}
             type="button"
           >
@@ -346,7 +346,7 @@ export default function FormBuilder({
             Agregar pregunta
           </button>
           <button
-            className="inline-flex h-10 items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
+            className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
             onClick={() => addField("section")}
             type="button"
           >
@@ -357,14 +357,14 @@ export default function FormBuilder({
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+      <div className="flex flex-col gap-3 border-t border-zinc-200 bg-zinc-50 px-4 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
         <p className="text-xs text-zinc-400">
           Los campos con <span className="text-rose-500">*</span> son requeridos
         </p>
         <div className="flex items-center gap-3">
           <Link
             href={cancelHref}
-            className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+            className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
           >
             Cancelar
           </Link>

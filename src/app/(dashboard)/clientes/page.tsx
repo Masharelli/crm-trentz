@@ -72,7 +72,7 @@ export default async function ClientesPage({ searchParams }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Clientes
@@ -84,7 +84,7 @@ export default async function ClientesPage({ searchParams }: Props) {
           {escribir ? (
             <Link
               href="/clientes/nuevo"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
             >
               <Plus size={17} />
               Nuevo cliente
@@ -137,7 +137,7 @@ export default async function ClientesPage({ searchParams }: Props) {
                       </td>
                       <td className="px-5 py-4">
                         <span
-                          className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
+                          className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
                         >
                           {statusLabel[client.status] ?? client.status}
                         </span>
@@ -186,7 +186,7 @@ export default async function ClientesPage({ searchParams }: Props) {
               {!q && !status && escribir ? (
                 <Link
                   href="/clientes/nuevo"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={16} />
                   Nuevo cliente

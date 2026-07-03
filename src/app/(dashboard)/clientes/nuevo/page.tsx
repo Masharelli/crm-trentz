@@ -78,7 +78,7 @@ export default async function NuevoClientePage({ searchParams }: Props) {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>Razon social</label>
                   <input
@@ -103,7 +103,7 @@ export default async function NuevoClientePage({ searchParams }: Props) {
               <div className="space-y-1.5">
                 <label className={labelClass}>Estado</label>
                 <select
-                  className="h-11 w-72 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+                  className="h-11 w-full rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100 sm:w-72"
                   defaultValue="prospect"
                   name="status"
                 >
@@ -122,7 +122,7 @@ export default async function NuevoClientePage({ searchParams }: Props) {
               </p>
             </div>
             <div className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>Correo principal</label>
                   <input
@@ -144,7 +144,7 @@ export default async function NuevoClientePage({ searchParams }: Props) {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <div className="space-y-1.5">
                   <label className={labelClass}>Sitio web</label>
                   <input
@@ -185,7 +185,7 @@ export default async function NuevoClientePage({ searchParams }: Props) {
             <div className="flex items-center justify-end gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
               <Link
                 href="/clientes"
-                className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
               >
                 Cancelar
               </Link>

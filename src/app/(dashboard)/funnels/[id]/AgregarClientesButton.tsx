@@ -68,7 +68,7 @@ export default function AgregarClientesButton({
   return (
     <>
       <button
-        className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+        className="inline-flex h-11 whitespace-nowrap items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
         disabled={stages.length === 0}
         onClick={() => setOpen(true)}
         type="button"
@@ -119,12 +119,12 @@ export default function AgregarClientesButton({
                   value={query}
                 />
               </div>
-              <div className="flex items-center gap-2">
-                <label className="text-sm font-medium text-zinc-700">
+              <div className="flex flex-wrap items-center gap-2">
+                <label className="shrink-0 text-sm font-medium text-zinc-700">
                   Agregar a la etapa:
                 </label>
                 <select
-                  className="h-9 rounded-md border border-zinc-200 bg-white px-2.5 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
+                  className="h-9 min-w-0 flex-1 rounded-md border border-zinc-200 bg-white px-2.5 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
                   onChange={(e) => setStageId(e.target.value)}
                   value={stageId}
                 >
@@ -153,7 +153,7 @@ export default function AgregarClientesButton({
                           {client.display_name}
                         </span>
                         <span
-                          className={`inline-flex h-6 items-center rounded-md px-2 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
+                          className={`inline-flex whitespace-nowrap h-6 items-center rounded-md px-2 text-xs font-semibold ring-1 ${statusClass[client.status] ?? statusClass.prospect}`}
                         >
                           {statusLabel[client.status] ?? client.status}
                         </span>
@@ -170,7 +170,7 @@ export default function AgregarClientesButton({
               )}
             </div>
 
-            <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-5 py-4">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-5 py-4">
               <p className="text-sm text-zinc-500">
                 {selected.size}{" "}
                 {selected.size === 1
@@ -179,14 +179,14 @@ export default function AgregarClientesButton({
               </p>
               <div className="flex items-center gap-2">
                 <button
-                  className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+                  className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
                   onClick={close}
                   type="button"
                 >
                   Cancelar
                 </button>
                 <button
-                  className="inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+                  className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md bg-zinc-950 px-5 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
                   disabled={selected.size === 0 || isPending}
                   onClick={handleAdd}
                   type="button"

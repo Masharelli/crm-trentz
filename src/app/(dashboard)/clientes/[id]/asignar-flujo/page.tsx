@@ -58,11 +58,11 @@ export default async function AsignarFlujoPage({ params, searchParams }: Props) 
           >
             <ArrowLeft size={17} />
           </Link>
-          <div>
+          <div className="min-w-0">
             <h1 className="text-xl font-semibold text-zinc-950 sm:text-2xl">
               Asignar flujo
             </h1>
-            <p className="text-sm text-zinc-500">{client.display_name}</p>
+            <p className="truncate text-sm text-zinc-500">{client.display_name}</p>
           </div>
         </div>
       </header>
@@ -91,7 +91,7 @@ export default async function AsignarFlujoPage({ params, searchParams }: Props) 
                 </p>
                 <Link
                   href="/tareas/flujos/nuevo"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={16} />
                   Nuevo flujo

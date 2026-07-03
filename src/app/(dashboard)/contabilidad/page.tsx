@@ -254,7 +254,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Contabilidad
@@ -266,7 +266,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
           {escribir ? (
             <Link
               href="/contabilidad/nuevo"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
             >
               <Plus size={17} />
               Nuevo gasto
@@ -313,7 +313,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
         </section>
 
         <section className="mt-6 grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.6fr)]">
-          <div className="rounded-lg border border-zinc-200 bg-white">
+          <div className="min-w-0 rounded-lg border border-zinc-200 bg-white">
             <div className="flex flex-col gap-3 border-b border-zinc-200 p-5 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <h2 className="text-lg font-semibold">Gastos registrados</h2>
@@ -321,7 +321,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
                   {expenses.length} movimientos encontrados.
                 </p>
               </div>
-              <div className="min-w-48">
+              <div className="w-full sm:w-48 sm:shrink-0">
                 <div className="h-2 overflow-hidden rounded-full bg-zinc-100">
                   <div
                     className="h-full rounded-full bg-emerald-500"
@@ -366,7 +366,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           <span
-                            className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${categoryClass[expense.category]}`}
+                            className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${categoryClass[expense.category]}`}
                           >
                             {categoryLabel[expense.category]}
                           </span>
@@ -412,7 +412,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
                 {escribir ? (
                   <Link
                     href="/contabilidad/nuevo"
-                    className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                    className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                   >
                     <Plus size={16} />
                     Nuevo gasto
@@ -422,7 +422,7 @@ export default async function ContabilidadPage({ searchParams }: Props) {
             )}
           </div>
 
-          <div className="grid gap-6">
+          <div className="grid min-w-0 gap-6">
             <section className="rounded-lg border border-zinc-200 bg-white p-5">
               <h2 className="text-lg font-semibold">Gasto por categoria</h2>
               <div className="mt-5 grid gap-3">

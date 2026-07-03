@@ -91,7 +91,7 @@ function Card({
 }) {
   return (
     <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white shadow-sm">
-      <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50 px-6 py-3">
+      <div className="flex items-center gap-2 border-b border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6">
         <span className="text-zinc-400">{icon}</span>
         <p className="text-xs font-semibold uppercase tracking-widest text-zinc-400">
           {title}
@@ -107,7 +107,7 @@ export default async function PortalClientePage({ params }: Props) {
 
   const invalido = (
     <Shell>
-      <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-6 py-16 text-center shadow-sm">
+      <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-4 py-16 text-center shadow-sm sm:px-6">
         <div className="grid size-14 place-items-center rounded-full bg-zinc-100 text-zinc-400">
           <FileQuestion size={28} />
         </div>
@@ -181,7 +181,7 @@ export default async function PortalClientePage({ params }: Props) {
   return (
     <Shell>
       <div className="space-y-4">
-        <div className="rounded-xl border border-zinc-200 bg-white px-6 py-5 shadow-sm">
+        <div className="rounded-xl border border-zinc-200 bg-white px-4 py-5 shadow-sm sm:px-6">
           <p className="text-sm text-zinc-500">Portal de cliente</p>
           <h1 className="mt-0.5 text-xl font-semibold text-zinc-950">
             {client.display_name}
@@ -191,7 +191,7 @@ export default async function PortalClientePage({ params }: Props) {
         {/* Pagos pendientes */}
         <Card icon={<WalletCards size={14} />} title="Pagos pendientes">
           {abiertos.length === 0 ? (
-            <div className="flex items-center gap-2.5 px-6 py-5">
+            <div className="flex items-center gap-2.5 px-4 py-5 sm:px-6">
               <CheckCircle2 className="text-emerald-500" size={18} />
               <p className="text-sm text-zinc-600">
                 Estás al corriente. No tienes pagos pendientes.
@@ -203,7 +203,7 @@ export default async function PortalClientePage({ params }: Props) {
                 const vencido =
                   p.status === "overdue" || dueDateOf(p) < hoy;
                 return (
-                  <div className="flex items-center gap-3 px-6 py-3.5" key={p.id}>
+                  <div className="flex items-center gap-3 px-4 py-3.5 sm:px-6" key={p.id}>
                     <div className="min-w-0 flex-1">
                       <p className="truncate text-sm font-medium text-zinc-950">
                         {p.concept}
@@ -230,7 +230,7 @@ export default async function PortalClientePage({ params }: Props) {
             <div className="divide-y divide-zinc-100">
               {formularios.map((f) => (
                 <a
-                  className="flex items-center gap-3 px-6 py-3.5 transition hover:bg-zinc-50"
+                  className="flex items-center gap-3 px-4 py-3.5 transition hover:bg-zinc-50 sm:px-6"
                   href={`/f/${f.token}`}
                   key={f.id}
                 >
@@ -256,7 +256,7 @@ export default async function PortalClientePage({ params }: Props) {
         {/* Documentos */}
         <Card icon={<FileText size={14} />} title="Tus documentos">
           {documents.length === 0 ? (
-            <div className="px-6 py-5">
+            <div className="px-4 py-5 sm:px-6">
               <p className="text-sm text-zinc-400">
                 Aún no hay documentos compartidos.
               </p>
@@ -264,7 +264,7 @@ export default async function PortalClientePage({ params }: Props) {
           ) : (
             <div className="divide-y divide-zinc-100">
               {documents.map((doc) => (
-                <div className="flex items-center gap-3 px-6 py-3" key={doc.id}>
+                <div className="flex items-center gap-3 px-4 py-3 sm:px-6" key={doc.id}>
                   <p className="min-w-0 flex-1 truncate text-sm text-zinc-800">
                     {doc.file_name}
                   </p>
@@ -289,7 +289,7 @@ export default async function PortalClientePage({ params }: Props) {
           <Card icon={<CheckCircle2 size={14} />} title="Pagos realizados">
             <div className="divide-y divide-zinc-100">
               {pagados.map((p) => (
-                <div className="flex items-center gap-3 px-6 py-3" key={p.id}>
+                <div className="flex items-center gap-3 px-4 py-3 sm:px-6" key={p.id}>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm text-zinc-800">{p.concept}</p>
                     {p.paid_at ? (

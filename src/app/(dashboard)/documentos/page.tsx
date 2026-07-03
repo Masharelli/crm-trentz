@@ -97,7 +97,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Documentos
@@ -109,7 +109,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
           {escribir ? (
             <Link
               href="/documentos/nuevo"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
             >
               <Plus size={17} />
               Subir documento
@@ -164,7 +164,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
                         </td>
                         <td className="px-5 py-4">
                           <span
-                            className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${typeColor}`}
+                            className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${typeColor}`}
                           >
                             {typeLabel}
                           </span>
@@ -224,7 +224,7 @@ export default async function DocumentosPage({ searchParams }: Props) {
               {(!type || type === "all") && escribir ? (
                 <Link
                   href="/documentos/nuevo"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={16} />
                   Subir documento

@@ -68,7 +68,7 @@ export default async function CorreosPage({ searchParams }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-normal text-zinc-950 sm:text-3xl">
               Correos
@@ -78,7 +78,7 @@ export default async function CorreosPage({ searchParams }: Props) {
           {escribir ? (
             <Link
               href="/correos/nuevo"
-              className="inline-flex h-11 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 sm:w-auto"
             >
               <Plus size={17} />
               Redactar correo
@@ -132,7 +132,7 @@ export default async function CorreosPage({ searchParams }: Props) {
                         <td className="px-5 py-4 text-zinc-600">{clientName}</td>
                         <td className="px-5 py-4">
                           <span
-                            className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[email.status] ?? statusClass.pending}`}
+                            className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[email.status] ?? statusClass.pending}`}
                           >
                             {statusLabel[email.status] ?? email.status}
                           </span>
@@ -169,7 +169,7 @@ export default async function CorreosPage({ searchParams }: Props) {
               {!status && escribir ? (
                 <Link
                   href="/correos/nuevo"
-                  className="mt-2 inline-flex h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                  className="mt-2 inline-flex whitespace-nowrap h-10 items-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
                 >
                   <Plus size={16} />
                   Redactar correo

@@ -18,7 +18,7 @@ export default function NotFound() {
         </div>
         <Link
           href="/"
-          className="inline-flex h-10 items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+          className="inline-flex h-10 whitespace-nowrap items-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
         >
           Volver al inicio
         </Link>

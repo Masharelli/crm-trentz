@@ -83,7 +83,7 @@ export default async function VerPagoPage({ params }: Props) {
   return (
     <>
       <header className="border-b border-zinc-200 bg-white px-4 py-4 sm:px-6 lg:px-8">
-        <div className="flex items-center justify-between gap-4">
+        <div className="flex flex-wrap items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <Link
               href="/pagos"
@@ -102,7 +102,7 @@ export default async function VerPagoPage({ params }: Props) {
           {escribir ? (
             <Link
               href={`/pagos/${id}/editar`}
-              className="inline-flex h-9 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
+              className="inline-flex h-9 whitespace-nowrap items-center gap-2 rounded-md border border-zinc-200 bg-white px-3.5 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
             >
               <Pencil size={14} />
               Editar
@@ -127,7 +127,7 @@ export default async function VerPagoPage({ params }: Props) {
               <Field label="Concepto">
                 {payment.concept}
               </Field>
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Monto">
                   {isMonthZero ? (
                     <div className="flex flex-col gap-1">
@@ -154,7 +154,7 @@ export default async function VerPagoPage({ params }: Props) {
                             payment.currency,
                           )}
                         </span>
-                        <span className="inline-flex h-5 items-center rounded px-1.5 text-[11px] font-semibold bg-violet-50 text-violet-700 ring-1 ring-violet-200">
+                        <span className="inline-flex whitespace-nowrap h-5 items-center rounded px-1.5 text-[11px] font-semibold bg-violet-50 text-violet-700 ring-1 ring-violet-200">
                           -{payment.discount_pct}%
                         </span>
                       </div>
@@ -185,13 +185,13 @@ export default async function VerPagoPage({ params }: Props) {
               </p>
             </div>
             <div className="space-y-5 px-6 py-6">
-              <div className="grid grid-cols-2 gap-5">
+              <div className="grid grid-cols-1 gap-5 sm:grid-cols-2">
                 <Field label="Fecha de vencimiento">
                   {formatDate(payment.due_date)}
                 </Field>
                 <Field label="Estado">
                   <span
-                    className={`inline-flex h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[payment.status] ?? statusClass.pending}`}
+                    className={`inline-flex whitespace-nowrap h-7 items-center rounded-md px-2.5 text-xs font-semibold ring-1 ${statusClass[payment.status] ?? statusClass.pending}`}
                   >
                     {statusLabel[payment.status] ?? payment.status}
                   </span>

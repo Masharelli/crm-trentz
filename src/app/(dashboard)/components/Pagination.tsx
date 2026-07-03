@@ -43,12 +43,12 @@ export default function Pagination({
   const hasta = Math.min(page * pageSize, total);
 
   const navButton =
-    "inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100";
+    "inline-flex whitespace-nowrap h-9 items-center gap-1.5 rounded-md border border-zinc-200 bg-white px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100";
   const navDisabled =
-    "inline-flex h-9 items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50 px-3 text-sm font-semibold text-zinc-300";
+    "inline-flex whitespace-nowrap h-9 items-center gap-1.5 rounded-md border border-zinc-100 bg-zinc-50 px-3 text-sm font-semibold text-zinc-300";
 
   return (
-    <div className="mt-4 flex items-center justify-between gap-3">
+    <div className="mt-4 flex flex-wrap items-center justify-between gap-3">
       <p className="text-sm text-zinc-500">
         Mostrando {desde}–{hasta} de {total}
       </p>

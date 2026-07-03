@@ -1,4 +1,5 @@
 import { LockKeyhole, Mail } from "lucide-react";
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { signIn } from "@/app/auth-actions";
 import { createClient } from "@/lib/supabase/server";
@@ -66,7 +67,15 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </label>
 
           <label className="grid gap-2 text-sm font-medium text-zinc-700">
-            Contrasena
+            <span className="flex items-center justify-between gap-2">
+              Contrasena
+              <Link
+                href="/recuperar"
+                className="text-sm font-medium text-zinc-500 transition hover:text-zinc-950"
+              >
+                ¿Olvidaste tu contraseña?
+              </Link>
+            </span>
             <span className="flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-zinc-500">
               <LockKeyhole size={17} />
               <input
@@ -81,7 +90,7 @@ export default async function LoginPage({ searchParams }: LoginPageProps) {
           </label>
 
           <button
-            className="mt-2 inline-flex h-11 items-center justify-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+            className="mt-2 inline-flex whitespace-nowrap h-11 items-center justify-center rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
             type="submit"
           >
             Entrar

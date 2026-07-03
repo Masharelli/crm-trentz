@@ -181,7 +181,7 @@ export default function NuevoFunnelForm() {
         ) : null}
 
         <button
-          className="inline-flex h-10 items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
+          className="inline-flex h-10 whitespace-nowrap items-center gap-2 rounded-md border border-dashed border-zinc-300 px-4 text-sm font-semibold text-zinc-600 transition hover:border-zinc-400 hover:text-zinc-950"
           onClick={addStage}
           type="button"
         >
@@ -191,14 +191,14 @@ export default function NuevoFunnelForm() {
       </div>
 
       {/* Acciones */}
-      <div className="flex items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
+      <div className="flex flex-wrap items-center justify-between gap-3 border-t border-zinc-200 bg-zinc-50 px-6 py-4">
         <p className="text-xs text-zinc-400">
           Los campos con <span className="text-rose-500">*</span> son requeridos
         </p>
         <div className="flex items-center gap-3">
           <Link
             href="/funnels"
-            className="inline-flex h-10 items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
+            className="inline-flex h-10 whitespace-nowrap items-center rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-100"
           >
             Cancelar
           </Link>
