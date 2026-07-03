@@ -1,6 +1,8 @@
 "use client";
 
 import {
+  BarChart3,
+  CalendarDays,
   Calculator,
   ClipboardList,
   Files,
@@ -8,6 +10,7 @@ import {
   LayoutDashboard,
   ListChecks,
   Mail,
+  MessageCircle,
   Settings,
   UsersRound,
   WalletCards,
@@ -20,15 +23,22 @@ const navigation = [
   { href: "/clientes", icon: UsersRound, label: "Clientes" },
   { href: "/funnels", icon: Funnel, label: "Funnels" },
   { href: "/tareas", icon: ListChecks, label: "Tareas" },
+  { href: "/calendario", icon: CalendarDays, label: "Calendario" },
   { href: "/formularios", icon: ClipboardList, label: "Formularios" },
   { href: "/pagos", icon: WalletCards, label: "Pagos" },
   { href: "/contabilidad", icon: Calculator, label: "Contabilidad" },
+  { href: "/reportes", icon: BarChart3, label: "Reportes" },
   { href: "/documentos", icon: Files, label: "Documentos" },
   { href: "/correos", icon: Mail, label: "Correos" },
+  { href: "/whatsapp", icon: MessageCircle, label: "WhatsApp" },
   { href: "/ajustes", icon: Settings, label: "Ajustes" },
 ];
 
-export default function SidebarNav() {
+export default function SidebarNav({
+  onNavigate,
+}: {
+  onNavigate?: () => void;
+}) {
   const pathname = usePathname();
 
   return (
@@ -42,6 +52,7 @@ export default function SidebarNav() {
           <Link
             href={item.href}
             key={item.label}
+            onClick={onNavigate}
             className={`flex h-11 items-center gap-3 rounded-md px-3 text-sm font-medium transition ${
               active
                 ? "bg-zinc-950 text-white"
