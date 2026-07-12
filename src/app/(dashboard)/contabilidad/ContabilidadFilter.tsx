@@ -8,6 +8,33 @@ function currentMonth() {
   return new Date().toISOString().slice(0, 7);
 }
 
+function formatMonthLabel(value: string) {
+  const label = new Intl.DateTimeFormat("es-MX", {
+    month: "long",
+    timeZone: "UTC",
+    year: "numeric",
+  }).format(new Date(`${value}-01T00:00:00.000Z`));
+
+  return label.charAt(0).toUpperCase() + label.slice(1);
+}
+
+function getMonthOptions(selected: string) {
+  const now = new Date();
+  const options: string[] = [];
+
+  for (let i = 0; i < 24; i++) {
+    const date = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - i, 1));
+    options.push(date.toISOString().slice(0, 7));
+  }
+
+  if (/^\d{4}-\d{2}$/.test(selected) && !options.includes(selected)) {
+    options.push(selected);
+    options.sort().reverse();
+  }
+
+  return options;
+}
+
 export default function ContabilidadFilter() {
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -15,6 +42,13 @@ export default function ContabilidadFilter() {
   const currentCurrency = searchParams.get("currency") ?? "MXN";
   const currentQ = searchParams.get("q") ?? "";
   const currentMonthValue = searchParams.get("month") ?? currentMonth();
+  const monthOptions = getMonthOptions(currentMonthValue);
+
+  function handleMonthChange(e: React.ChangeEvent<HTMLSelectElement>) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("month", e.target.value);
+    router.push(`/contabilidad?${params.toString()}`);
+  }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -37,16 +71,22 @@ export default function ContabilidadFilter() {
   return (
     <form
       onSubmit={handleSubmit}
-      className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-2 md:items-end xl:grid-cols-[140px_120px_180px_minmax(220px,1fr)_auto]"
+      className="grid gap-3 rounded-lg border border-zinc-200 bg-white p-3 md:grid-cols-2 md:items-end xl:grid-cols-[180px_120px_180px_minmax(220px,1fr)_auto]"
     >
       <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
         Mes
-        <input
+        <select
           className="h-10 rounded-md border border-zinc-200 bg-white px-3 text-sm text-zinc-950 outline-none focus:border-zinc-400 focus:ring-2 focus:ring-zinc-100"
-          defaultValue={currentMonthValue}
           name="month"
-          type="month"
-        />
+          onChange={handleMonthChange}
+          value={currentMonthValue}
+        >
+          {monthOptions.map((month) => (
+            <option key={month} value={month}>
+              {formatMonthLabel(month)}
+            </option>
+          ))}
+        </select>
       </label>
 
       <label className="grid gap-1.5 text-sm font-medium text-zinc-700">
