@@ -33,6 +33,7 @@ export type WhatsAppMessage = {
     button_reply?: { title?: string };
     list_reply?: { title?: string };
   };
+  referral?: { ctwa_clid?: string };
 };
 
 export type WhatsAppStatus = {
@@ -135,10 +136,10 @@ export async function getOrCreateConversation(
   admin: SupabaseClient,
   waId: string,
   profileName?: string | null,
-): Promise<{ id: string } | null> {
+): Promise<{ id: string; clientId: string | null } | null> {
   const { data: existing } = await admin
     .from("whatsapp_conversations")
-    .select("id, profile_name")
+    .select("id, profile_name, client_id")
     .eq("wa_id", waId)
     .maybeSingle();
 
@@ -149,7 +150,7 @@ export async function getOrCreateConversation(
         .update({ profile_name: profileName })
         .eq("id", existing.id);
     }
-    return { id: existing.id };
+    return { id: existing.id, clientId: existing.client_id };
   }
 
   // Conversacion nueva: intentar auto-vincular con un cliente por telefono.
@@ -166,26 +167,31 @@ export async function getOrCreateConversation(
       client_id: match?.client_id ?? null,
       contact_id: match?.contact_id ?? null,
     })
-    .select("id")
+    .select("id, client_id")
     .single();
 
   if (error) {
     // Carrera entre eventos simultaneos del mismo numero: reintentar lectura.
     const { data: retry } = await admin
       .from("whatsapp_conversations")
-      .select("id")
+      .select("id, client_id")
       .eq("wa_id", waId)
       .maybeSingle();
-    return retry ? { id: retry.id } : null;
+    return retry ? { id: retry.id, clientId: retry.client_id } : null;
   }
 
-  return created;
+  return { id: created.id, clientId: created.client_id };
 }
 
 type IngestResult = {
   conversationId: string;
+  clientId: string | null;
   messageRowId: string;
   mediaId: string | null;
+  ctwaClid: string | null;
+  waId: string;
+  occurredAt: string;
+  whatsappBusinessAccountId: string | null;
 } | null;
 
 async function insertMessage(
@@ -206,6 +212,7 @@ export async function processInboundMessage(
   admin: SupabaseClient,
   msg: WhatsAppMessage,
   contact?: WhatsAppContact,
+  whatsappBusinessAccountId?: string,
 ): Promise<IngestResult> {
   const conversation = await getOrCreateConversation(
     admin,
@@ -234,6 +241,7 @@ export async function processInboundMessage(
     .eq("id", conversation.id)
     .single();
 
+  const ctwaClid = msg.referral?.ctwa_clid ?? null;
   await admin
     .from("whatsapp_conversations")
     .update({
@@ -241,10 +249,23 @@ export async function processInboundMessage(
       last_inbound_at: waTimestamp,
       last_message_preview: body,
       unread_count: (conv?.unread_count ?? 0) + 1,
+      ...(ctwaClid ? { ctwa_clid: ctwaClid } : {}),
+      ...(whatsappBusinessAccountId
+        ? { whatsapp_business_account_id: whatsappBusinessAccountId }
+        : {}),
     })
     .eq("id", conversation.id);
 
-  return { conversationId: conversation.id, messageRowId, mediaId: mediaIdOf(msg) };
+  return {
+    conversationId: conversation.id,
+    clientId: conversation.clientId,
+    messageRowId,
+    mediaId: mediaIdOf(msg),
+    ctwaClid,
+    waId: msg.from,
+    occurredAt: waTimestamp,
+    whatsappBusinessAccountId: whatsappBusinessAccountId ?? null,
+  };
 }
 
 // Mensajes enviados desde la app del celular (coexistencia). Llegan como
@@ -282,7 +303,16 @@ export async function processEcho(
     })
     .eq("id", conversation.id);
 
-  return { conversationId: conversation.id, messageRowId, mediaId: mediaIdOf(msg) };
+  return {
+    conversationId: conversation.id,
+    clientId: conversation.clientId,
+    messageRowId,
+    mediaId: mediaIdOf(msg),
+    ctwaClid: null,
+    waId: customerWaId,
+    occurredAt: waTimestamp,
+    whatsappBusinessAccountId: null,
+  };
 }
 
 const STATUS_RANK: Record<string, number> = {

@@ -1,5 +1,6 @@
 import { after, NextResponse, type NextRequest } from "next/server";
 import { createAdminClient } from "@/lib/supabase/admin";
+import { sendMetaConversion } from "@/lib/meta/conversions";
 import {
   processEcho,
   processHistory,
@@ -61,7 +62,23 @@ export async function POST(request: NextRequest) {
           }
           for (const msg of value.messages ?? []) {
             const contact = value.contacts?.find((c) => c.wa_id === msg.from);
-            const result = await processInboundMessage(admin, msg, contact);
+            const result = await processInboundMessage(admin, msg, contact, entry.id);
+            const ctwaClid = result?.ctwaClid;
+            const whatsappBusinessAccountId = result?.whatsappBusinessAccountId;
+            if (result && ctwaClid && whatsappBusinessAccountId) {
+              after(() =>
+                sendMetaConversion(admin, {
+                  eventId: `lead:${msg.id}`,
+                  eventName: "LeadSubmitted",
+                  clientId: result.clientId,
+                  conversationId: result.conversationId,
+                  occurredAt: result.occurredAt,
+                  waId: result.waId,
+                  ctwaClid,
+                  whatsappBusinessAccountId,
+                }),
+              );
+            }
             if (result?.mediaId) {
               const { conversationId, messageRowId, mediaId } = result;
               // Descarga de media despues de responder para no demorar el 200.

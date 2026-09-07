@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { createClient } from "@/lib/supabase/server";
+import { createAdminClient } from "@/lib/supabase/admin";
+import { sendMetaPurchase } from "@/lib/meta/conversions";
 
 const optionalPositiveNumber = z.preprocess(
   (value) => (value === "" ? undefined : value),
@@ -123,6 +126,10 @@ export async function crearPago(formData: FormData) {
     description: `Pago registrado: ${d.concept.trim()}`,
   });
 
+  if (!isMonthZero && d.status === "paid" && pago?.id) {
+    after(() => sendMetaPurchase(createAdminClient(), pago.id));
+  }
+
   revalidatePath("/pagos");
   revalidatePath("/");
   redirect(`/pagos?toast=${encodeURIComponent("Pago registrado correctamente")}`);
@@ -146,6 +153,12 @@ export async function actualizarPago(id: string, formData: FormData) {
 
   const d = parsed.data;
   const isMonthZero = d.is_month_zero || d.status === "month_zero";
+
+  const { data: previousPayment } = await supabase
+    .from("payments")
+    .select("status")
+    .eq("id", id)
+    .single();
 
   const { error } = await supabase
     .from("payments")
@@ -180,6 +193,10 @@ export async function actualizarPago(id: string, formData: FormData) {
     action: "updated",
     description: `Pago actualizado: ${d.concept.trim()}${d.paid_at ? " (marcado como pagado)" : ""}`,
   });
+
+  if (!isMonthZero && d.status === "paid" && previousPayment?.status !== "paid") {
+    after(() => sendMetaPurchase(createAdminClient(), id));
+  }
 
   revalidatePath("/pagos");
   revalidatePath("/");
