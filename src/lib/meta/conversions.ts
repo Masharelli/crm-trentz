@@ -1,7 +1,6 @@
-import crypto from "node:crypto";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-const GRAPH_URL = "https://graph.facebook.com/v23.0";
+const DEFAULT_GRAPH_API_VERSION = "v23.0";
 
 type EventInput = {
   eventId: string;
@@ -10,28 +9,28 @@ type EventInput = {
   conversationId: string;
   paymentId?: string | null;
   occurredAt: string;
-  waId: string;
   ctwaClid: string;
   whatsappBusinessAccountId: string;
-  email?: string | null;
   value?: number;
   currency?: string;
 };
-
-function hash(value: string): string {
-  return crypto.createHash("sha256").update(value).digest("hex");
-}
 
 function getConfig() {
   const datasetId = process.env.META_DATASET_ID;
   const accessToken = process.env.META_CAPI_ACCESS_TOKEN;
   const pageId = process.env.META_PAGE_ID;
+  const graphApiVersion =
+    process.env.META_GRAPH_API_VERSION ?? DEFAULT_GRAPH_API_VERSION;
 
   if (!datasetId || !accessToken || !pageId) {
     throw new Error("Faltan META_DATASET_ID, META_CAPI_ACCESS_TOKEN o META_PAGE_ID");
   }
 
-  return { datasetId, accessToken, pageId };
+  if (!/^v\d+\.\d+$/.test(graphApiVersion)) {
+    throw new Error("META_GRAPH_API_VERSION no tiene un formato valido");
+  }
+
+  return { datasetId, accessToken, pageId, graphApiVersion };
 }
 
 export async function sendMetaConversion(
@@ -46,40 +45,85 @@ export async function sendMetaConversion(
     payment_id: input.paymentId ?? null,
   });
 
-  if (insertError?.code === "23505") return;
+  if (insertError?.code === "23505") {
+    const { data: existing } = await admin
+      .from("meta_conversion_events")
+      .select("status")
+      .eq("event_id", input.eventId)
+      .maybeSingle();
+
+    // Los eventos confirmados nunca se duplican. Un evento fallido puede
+    // reintentarse si el webhook o la accion de pago vuelve a dispararlo.
+    if (!existing || existing.status !== "failed") return;
+
+    const { data: retried, error: retryError } = await admin
+      .from("meta_conversion_events")
+      .update({ status: "pending", last_error: null })
+      .eq("event_id", input.eventId)
+      .eq("status", "failed")
+      .select("event_id")
+      .maybeSingle();
+    if (retryError || !retried) {
+      console.error(
+        "[meta] no se pudo preparar el reintento:",
+        retryError?.message ?? "el evento ya esta siendo procesado",
+      );
+      return;
+    }
+  }
   if (insertError) {
-    console.error("[meta] no se pudo registrar el evento:", insertError.message);
-    return;
+    if (insertError.code !== "23505") {
+      console.error("[meta] no se pudo registrar el evento:", insertError.message);
+      return;
+    }
   }
 
   try {
-    const { datasetId, accessToken, pageId } = getConfig();
+    const { datasetId, accessToken, pageId, graphApiVersion } = getConfig();
+    const eventTime = new Date(input.occurredAt).getTime();
+    if (!Number.isFinite(eventTime)) {
+      throw new Error("La fecha del evento no es valida");
+    }
+
     const userData: Record<string, string> = {
       page_id: pageId,
       ctwa_clid: input.ctwaClid,
       whatsapp_business_account_id: input.whatsappBusinessAccountId,
-      ph: hash(input.waId.replace(/\D/g, "")),
     };
-    if (input.email) userData.em = hash(input.email.trim().toLowerCase());
 
     const event: Record<string, unknown> = {
       event_name: input.eventName,
-      event_time: Math.floor(new Date(input.occurredAt).getTime() / 1000),
+      event_time: Math.floor(eventTime / 1000),
       event_id: input.eventId,
       action_source: "business_messaging",
       messaging_channel: "whatsapp",
       user_data: userData,
     };
     if (input.eventName === "Purchase") {
-      event.custom_data = { currency: input.currency, value: input.value };
+      const value = input.value;
+      if (
+        !input.currency ||
+        typeof value !== "number" ||
+        !Number.isFinite(value) ||
+        value <= 0
+      ) {
+        throw new Error("Purchase requiere un valor positivo y una moneda");
+      }
+      event.custom_data = {
+        currency: input.currency.toUpperCase(),
+        value,
+      };
     }
 
-    const url = new URL(`${GRAPH_URL}/${datasetId}/events`);
-    url.searchParams.set("access_token", accessToken);
+    const url = `https://graph.facebook.com/${graphApiVersion}/${datasetId}/events`;
     const testEventCode = process.env.META_CAPI_TEST_EVENT_CODE;
     const response = await fetch(url, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      signal: AbortSignal.timeout(10_000),
       body: JSON.stringify({
         data: [event],
         ...(testEventCode ? { test_event_code: testEventCode } : {}),
@@ -111,16 +155,38 @@ export async function sendMetaPurchase(
 ): Promise<void> {
   const { data: payment, error } = await admin
     .from("payments")
-    .select("id, client_id, amount, currency, paid_at, clients(primary_email)")
+    .select("id, client_id, amount, currency, paid_at")
     .eq("id", paymentId)
     .eq("status", "paid")
     .single();
 
   if (error || !payment) return;
 
+  // La señal de negocio es la primera mensualidad cobrada. Las renovaciones
+  // posteriores no deben optimizarse como nuevas altas.
+  const { count: previousPaidCount, error: countError } = await admin
+    .from("payments")
+    .select("id", { count: "exact", head: true })
+    .eq("client_id", payment.client_id)
+    .eq("status", "paid")
+    .neq("id", payment.id);
+
+  if (countError || (previousPaidCount ?? 0) > 0) return;
+
+  const { data: previousPurchaseEvent, error: purchaseEventError } = await admin
+    .from("meta_conversion_events")
+    .select("event_id")
+    .eq("client_id", payment.client_id)
+    .eq("event_name", "Purchase")
+    .neq("payment_id", payment.id)
+    .limit(1)
+    .maybeSingle();
+
+  if (purchaseEventError || previousPurchaseEvent) return;
+
   const { data: conversation } = await admin
     .from("whatsapp_conversations")
-    .select("id, wa_id, ctwa_clid, whatsapp_business_account_id")
+    .select("id, ctwa_clid, whatsapp_business_account_id")
     .eq("client_id", payment.client_id)
     .not("ctwa_clid", "is", null)
     .not("whatsapp_business_account_id", "is", null)
@@ -130,7 +196,6 @@ export async function sendMetaPurchase(
 
   if (!conversation?.ctwa_clid || !conversation.whatsapp_business_account_id) return;
 
-  const client = payment.clients as unknown as { primary_email: string | null } | null;
   await sendMetaConversion(admin, {
     eventId: `purchase:${payment.id}`,
     eventName: "Purchase",
@@ -138,10 +203,8 @@ export async function sendMetaPurchase(
     conversationId: conversation.id,
     paymentId: payment.id,
     occurredAt: payment.paid_at ?? new Date().toISOString(),
-    waId: conversation.wa_id,
     ctwaClid: conversation.ctwa_clid,
     whatsappBusinessAccountId: conversation.whatsapp_business_account_id,
-    email: client?.primary_email,
     value: Number(payment.amount),
     currency: payment.currency,
   });

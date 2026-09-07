@@ -73,7 +73,6 @@ export async function POST(request: NextRequest) {
                   clientId: result.clientId,
                   conversationId: result.conversationId,
                   occurredAt: result.occurredAt,
-                  waId: result.waId,
                   ctwaClid,
                   whatsappBusinessAccountId,
                 }),

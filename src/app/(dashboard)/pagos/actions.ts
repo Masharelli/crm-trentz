@@ -89,6 +89,10 @@ export async function crearPago(formData: FormData) {
 
   const d = parsed.data;
   const isMonthZero = d.is_month_zero || d.status === "month_zero";
+  const paidAt =
+    !isMonthZero && d.status === "paid"
+      ? nullify(d.paid_at) ?? new Date().toISOString()
+      : nullify(d.paid_at);
 
   const { data: pago, error } = await supabase
     .from("payments")
@@ -100,7 +104,7 @@ export async function crearPago(formData: FormData) {
       discount_pct: isMonthZero ? 0 : d.discount_pct,
       due_date: d.due_date,
       is_month_zero: isMonthZero,
-      paid_at: isMonthZero ? null : nullify(d.paid_at),
+      paid_at: isMonthZero ? null : paidAt,
       second_month_amount: isMonthZero ? d.second_month_amount : null,
       second_month_due_date: isMonthZero ? d.second_month_due_date : null,
       status: isMonthZero ? "month_zero" : d.status,
@@ -153,6 +157,10 @@ export async function actualizarPago(id: string, formData: FormData) {
 
   const d = parsed.data;
   const isMonthZero = d.is_month_zero || d.status === "month_zero";
+  const paidAt =
+    !isMonthZero && d.status === "paid"
+      ? nullify(d.paid_at) ?? new Date().toISOString()
+      : nullify(d.paid_at);
 
   const { data: previousPayment } = await supabase
     .from("payments")
@@ -170,7 +178,7 @@ export async function actualizarPago(id: string, formData: FormData) {
       discount_pct: isMonthZero ? 0 : d.discount_pct,
       due_date: d.due_date,
       is_month_zero: isMonthZero,
-      paid_at: isMonthZero ? null : nullify(d.paid_at),
+      paid_at: isMonthZero ? null : paidAt,
       second_month_amount: isMonthZero ? d.second_month_amount : null,
       second_month_due_date: isMonthZero ? d.second_month_due_date : null,
       status: isMonthZero ? "month_zero" : d.status,
