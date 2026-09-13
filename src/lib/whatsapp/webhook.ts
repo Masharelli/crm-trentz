@@ -76,7 +76,7 @@ export function verifySignature(
     .digest("hex");
   const received = signatureHeader.slice("sha256=".length);
 
-  if (received.length !== expected.length) return false;
+  if (!/^[a-f0-9]{64}$/i.test(received)) return false;
 
   return crypto.timingSafeEqual(
     Buffer.from(received, "hex"),
@@ -235,26 +235,21 @@ export async function processInboundMessage(
   });
   if (!messageRowId) return null; // duplicado
 
-  const { data: conv } = await admin
-    .from("whatsapp_conversations")
-    .select("unread_count")
-    .eq("id", conversation.id)
-    .single();
-
   const ctwaClid = msg.referral?.ctwa_clid ?? null;
-  await admin
-    .from("whatsapp_conversations")
-    .update({
-      last_message_at: waTimestamp,
-      last_inbound_at: waTimestamp,
-      last_message_preview: body,
-      unread_count: (conv?.unread_count ?? 0) + 1,
-      ...(ctwaClid ? { ctwa_clid: ctwaClid } : {}),
-      ...(whatsappBusinessAccountId
-        ? { whatsapp_business_account_id: whatsappBusinessAccountId }
-        : {}),
-    })
-    .eq("id", conversation.id);
+  const { error: conversationError } = await admin.rpc(
+    "record_whatsapp_inbound",
+    {
+      p_conversation_id: conversation.id,
+      p_occurred_at: waTimestamp,
+      p_preview: body,
+      p_ctwa_clid: ctwaClid,
+      p_waba_id: whatsappBusinessAccountId ?? null,
+    },
+  );
+
+  if (conversationError) {
+    console.error("whatsapp conversation update:", conversationError.message);
+  }
 
   return {
     conversationId: conversation.id,

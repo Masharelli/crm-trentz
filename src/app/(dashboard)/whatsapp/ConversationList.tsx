@@ -1,5 +1,13 @@
+import { ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import BuscarConversacion from "./BuscarConversacion";
+
+export type ConversationFilter =
+  | "all"
+  | "unread"
+  | "unlinked"
+  | "mine"
+  | "resolved";
 
 export type ConversationRow = {
   id: string;
@@ -10,6 +18,9 @@ export type ConversationRow = {
   unread_count: number;
   last_message_at: string | null;
   last_message_preview: string | null;
+  inbox_status: "open" | "resolved";
+  assigned_to: string | null;
+  assignee: { full_name: string } | { full_name: string }[] | null;
   clients: { display_name: string } | { display_name: string }[] | null;
 };
 
@@ -44,15 +55,65 @@ export default function ConversationList({
   conversations,
   selectedId,
   q,
+  filter,
+  page,
+  total,
+  pageSize,
 }: {
   conversations: ConversationRow[];
   selectedId: string | null;
   q?: string;
+  filter: ConversationFilter;
+  page: number;
+  total: number;
+  pageSize: number;
 }) {
+  const totalPages = Math.max(1, Math.ceil(total / pageSize));
+
+  function listHref(overrides: {
+    filter?: ConversationFilter;
+    page?: number;
+    conversationId?: string;
+  }) {
+    const params = new URLSearchParams();
+    if (q) params.set("q", q);
+    const nextFilter = overrides.filter ?? filter;
+    if (nextFilter !== "all") params.set("filter", nextFilter);
+    const nextPage = overrides.page ?? page;
+    if (nextPage > 1) params.set("page", String(nextPage));
+    if (overrides.conversationId) params.set("c", overrides.conversationId);
+    const query = params.toString();
+    return query ? `/whatsapp?${query}` : "/whatsapp";
+  }
+
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="border-b border-zinc-100 p-3">
-        <BuscarConversacion initialValue={q ?? ""} />
+      <div className="grid gap-2 border-b border-zinc-100 p-3">
+        <BuscarConversacion initialValue={q ?? ""} filter={filter} />
+        <div className="flex gap-1" aria-label="Filtrar conversaciones">
+          {(
+            [
+              ["all", "Todas"],
+              ["unread", "No leidas"],
+              ["unlinked", "Sin vincular"],
+              ["mine", "Mias"],
+              ["resolved", "Resueltas"],
+            ] as const
+          ).map(([value, label]) => (
+            <Link
+              key={value}
+              href={listHref({ filter: value, page: 1 })}
+              aria-current={filter === value ? "page" : undefined}
+              className={`pressable inline-flex h-8 items-center rounded-md px-2.5 text-xs font-semibold ${
+                filter === value
+                  ? "bg-zinc-950 text-white shadow-sm"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+              }`}
+            >
+              {label}
+            </Link>
+          ))}
+        </div>
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
@@ -64,8 +125,8 @@ export default function ConversationList({
           return (
             <Link
               key={conv.id}
-              href={`/whatsapp?c=${conv.id}${q ? `&q=${encodeURIComponent(q)}` : ""}`}
-              className={`flex items-center gap-3 border-b border-zinc-50 px-4 py-3 transition ${
+              href={listHref({ conversationId: conv.id })}
+              className={`pressable flex items-center gap-3 border-b border-zinc-50 px-4 py-3 ${
                 active ? "bg-zinc-100" : "hover:bg-zinc-50"
               }`}
             >
@@ -104,6 +165,40 @@ export default function ConversationList({
           );
         })}
       </div>
+
+      {totalPages > 1 ? (
+        <div className="flex items-center justify-between border-t border-zinc-100 bg-zinc-50 px-3 py-2">
+          {page > 1 ? (
+            <Link
+              href={listHref({ page: page - 1 })}
+              className="pressable grid size-8 place-items-center rounded-md border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100"
+              aria-label="Pagina anterior"
+            >
+              <ChevronLeft size={16} />
+            </Link>
+          ) : (
+            <span className="grid size-8 place-items-center text-zinc-300">
+              <ChevronLeft size={16} />
+            </span>
+          )}
+          <span className="text-xs font-medium text-zinc-500">
+            {page} de {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={listHref({ page: page + 1 })}
+              className="pressable grid size-8 place-items-center rounded-md border border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-100"
+              aria-label="Pagina siguiente"
+            >
+              <ChevronRight size={16} />
+            </Link>
+          ) : (
+            <span className="grid size-8 place-items-center text-zinc-300">
+              <ChevronRight size={16} />
+            </span>
+          )}
+        </div>
+      ) : null}
     </div>
   );
 }

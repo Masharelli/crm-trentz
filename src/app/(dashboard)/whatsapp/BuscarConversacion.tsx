@@ -3,11 +3,14 @@
 import { Search } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import type { ConversationFilter } from "./ConversationList";
 
 export default function BuscarConversacion({
   initialValue,
+  filter,
 }: {
   initialValue: string;
+  filter: ConversationFilter;
 }) {
   const router = useRouter();
   const [value, setValue] = useState(initialValue);
@@ -15,7 +18,11 @@ export default function BuscarConversacion({
   function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     const term = value.trim();
-    router.push(term ? `/whatsapp?q=${encodeURIComponent(term)}` : "/whatsapp");
+    const params = new URLSearchParams();
+    if (term) params.set("q", term);
+    if (filter !== "all") params.set("filter", filter);
+    const query = params.toString();
+    router.push(query ? `/whatsapp?${query}` : "/whatsapp");
   }
 
   return (

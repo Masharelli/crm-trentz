@@ -3,15 +3,25 @@ import {
   ArrowLeft,
   Check,
   CheckCheck,
+  Clock3,
   FileText,
+  RefreshCcw,
   Smartphone,
 } from "lucide-react";
 import Link from "next/link";
+import type { WhatsAppTemplate } from "@/lib/whatsapp/client";
 import Composer from "./Composer";
-import { type ConversationRow, conversationName } from "./ConversationList";
+import ConversationControls from "./ConversationControls";
+import {
+  type ConversationFilter,
+  type ConversationRow,
+  conversationName,
+} from "./ConversationList";
 import LinkClientDialog from "./LinkClientDialog";
 import MarkAsRead from "./MarkAsRead";
 import ThreadScroller from "./ThreadScroller";
+import PendingButton from "./PendingButton";
+import { enviarMensaje } from "./actions";
 
 export type MessageRow = {
   id: string;
@@ -26,6 +36,7 @@ export type MessageRow = {
   error_message: string | null;
   wa_timestamp: string;
   sent_by: string | null;
+  profiles: { full_name: string } | { full_name: string }[] | null;
   mediaUrl?: string | null;
 };
 
@@ -54,6 +65,9 @@ function StatusTicks({ message }: { message: MessageRow }) {
   }
   if (message.status === "delivered") {
     return <CheckCheck size={14} className="text-emerald-100" />;
+  }
+  if (message.status === "pending") {
+    return <Clock3 size={13} className="text-emerald-100" />;
   }
   return <Check size={14} className="text-emerald-100" />;
 }
@@ -108,33 +122,50 @@ function MediaContent({ message }: { message: MessageRow }) {
 export default function MessageThread({
   conversation,
   messages,
-  windowOpen,
   lastInboundAt,
   escribir,
   clientes,
+  totalMessages,
+  messagePages,
+  listState,
+  templates,
+  team,
 }: {
   conversation: ConversationRow;
   messages: MessageRow[];
-  windowOpen: boolean;
   lastInboundAt: string | null;
   escribir: boolean;
   clientes: Array<{ id: string; display_name: string }>;
+  totalMessages: number;
+  messagePages: number;
+  listState: { q?: string; filter: ConversationFilter; page: number };
+  templates: WhatsAppTemplate[];
+  team: Array<{ id: string; full_name: string }>;
 }) {
   const name = conversationName(conversation);
+  const backParams = new URLSearchParams();
+  if (listState.q) backParams.set("q", listState.q);
+  if (listState.filter !== "all") backParams.set("filter", listState.filter);
+  if (listState.page > 1) backParams.set("page", String(listState.page));
+  const backQuery = backParams.toString();
+  const backHref = backQuery ? `/whatsapp?${backQuery}` : "/whatsapp";
 
-  let lastDay = "";
+  const olderParams = new URLSearchParams(backParams);
+  olderParams.set("c", conversation.id);
+  olderParams.set("messages", String(messagePages + 1));
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
       <MarkAsRead
         conversationId={conversation.id}
         unreadCount={conversation.unread_count}
+        seenThrough={conversation.last_message_at}
       />
 
       <div className="flex items-center gap-3 border-b border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6">
         <Link
-          href="/whatsapp"
-          className="grid size-9 shrink-0 place-items-center rounded-md text-zinc-500 transition hover:bg-zinc-100 md:hidden"
+          href={backHref}
+          className="pressable grid size-9 shrink-0 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 md:hidden"
         >
           <ArrowLeft size={18} />
         </Link>
@@ -153,7 +184,7 @@ export default function MessageThread({
         {conversation.client_id ? (
           <Link
             href={`/clientes/${conversation.client_id}`}
-            className="inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50"
+            className="pressable inline-flex h-9 shrink-0 items-center whitespace-nowrap rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
           >
             Ver cliente
           </Link>
@@ -166,14 +197,38 @@ export default function MessageThread({
         ) : null}
       </div>
 
+      {escribir ? (
+        <ConversationControls
+          conversationId={conversation.id}
+          assignedTo={conversation.assigned_to}
+          status={conversation.inbox_status}
+          team={team}
+        />
+      ) : null}
+
       <ThreadScroller messageCount={messages.length}>
         <div className="flex flex-col gap-1.5">
-          {messages.map((message) => {
+          {totalMessages > messages.length ? (
+            <div className="mb-2 flex justify-center">
+              <Link
+                href={`/whatsapp?${olderParams.toString()}`}
+                className="pressable rounded-full border border-zinc-200 bg-white px-3.5 py-2 text-xs font-semibold text-zinc-600 shadow-sm hover:bg-zinc-50"
+              >
+                Cargar mensajes anteriores
+              </Link>
+            </div>
+          ) : null}
+
+          {messages.map((message, index) => {
             const day = formatDay(message.wa_timestamp);
-            const showSeparator = day !== lastDay;
-            lastDay = day;
+            const previousDay =
+              index > 0 ? formatDay(messages[index - 1].wa_timestamp) : null;
+            const showSeparator = day !== previousDay;
 
             const outbound = message.direction === "outbound";
+            const profile = Array.isArray(message.profiles)
+              ? message.profiles[0]
+              : message.profiles;
 
             return (
               <div key={message.id} className="flex flex-col">
@@ -219,9 +274,31 @@ export default function MessageThread({
                       {outbound && message.source === "phone" ? (
                         <Smartphone size={12} />
                       ) : null}
+                      {outbound && profile?.full_name ? (
+                        <span>{profile.full_name}</span>
+                      ) : null}
                       <span>{formatTime(message.wa_timestamp)}</span>
                       {outbound ? <StatusTicks message={message} /> : null}
                     </div>
+                    {outbound &&
+                    message.status === "failed" &&
+                    message.body ? (
+                      <form action={enviarMensaje} className="mt-2 flex justify-end">
+                        <input
+                          type="hidden"
+                          name="conversation_id"
+                          value={conversation.id}
+                        />
+                        <input type="hidden" name="body" value={message.body} />
+                        <PendingButton
+                          pendingLabel="Reintentando"
+                          className="inline-flex h-7 items-center gap-1.5 rounded-md bg-white/15 px-2 text-[11px] font-semibold text-white hover:bg-white/25 disabled:opacity-60"
+                        >
+                          <RefreshCcw size={12} />
+                          Reintentar
+                        </PendingButton>
+                      </form>
+                    ) : null}
                   </div>
                 </div>
               </div>
@@ -233,8 +310,8 @@ export default function MessageThread({
       {escribir ? (
         <Composer
           conversationId={conversation.id}
-          windowOpen={windowOpen}
           lastInboundAt={lastInboundAt}
+          templates={templates}
         />
       ) : null}
     </div>

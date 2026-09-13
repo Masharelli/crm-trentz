@@ -1,6 +1,12 @@
 "use client";
 
-import { CheckCircle2, Copy, MessageCircle, TriangleAlert } from "lucide-react";
+import {
+  CheckCircle2,
+  Copy,
+  LoaderCircle,
+  MessageCircle,
+  TriangleAlert,
+} from "lucide-react";
 import Script from "next/script";
 import { useCallback, useEffect, useState } from "react";
 
@@ -38,7 +44,8 @@ export default function ConnectWhatsApp({
   const [sdkReady, setSdkReady] = useState(false);
   const [result, setResult] = useState<SignupResult | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [copied, setCopied] = useState(false);
+  const [copied, setCopied] = useState<"phone" | "waba" | null>(null);
+  const [connecting, setConnecting] = useState(false);
 
   useEffect(() => {
     window.fbAsyncInit = () => {
@@ -63,6 +70,7 @@ export default function ConnectWhatsApp({
         if (data.type !== "WA_EMBEDDED_SIGNUP") return;
 
         if (data.event === "FINISH" || data.event === "FINISH_ONLY_WABA") {
+          setConnecting(false);
           setResult({
             phoneNumberId: data.data?.phone_number_id,
             wabaId: data.data?.waba_id,
@@ -70,6 +78,7 @@ export default function ConnectWhatsApp({
           });
           setError(null);
         } else if (data.event === "CANCEL") {
+          setConnecting(false);
           setResult(null);
           setError(
             data.data?.current_step
@@ -88,11 +97,13 @@ export default function ConnectWhatsApp({
 
   const launch = useCallback(() => {
     setError(null);
+    setConnecting(true);
     window.FB?.login(
       (response) => {
         // El codigo de respuesta no se usa: los activos quedan en tu
         // portafolio y el CRM usa el token del usuario del sistema.
         void response;
+        setConnecting(false);
       },
       {
         config_id: configId,
@@ -107,11 +118,10 @@ export default function ConnectWhatsApp({
     );
   }, [configId]);
 
-  async function copyPhoneNumberId() {
-    if (!result?.phoneNumberId) return;
-    await navigator.clipboard.writeText(result.phoneNumberId);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  async function copyIdentifier(value: string, field: "phone" | "waba") {
+    await navigator.clipboard.writeText(value);
+    setCopied(field);
+    setTimeout(() => setCopied(null), 2000);
   }
 
   const missingConfig = !appId || !configId;
@@ -149,9 +159,13 @@ export default function ConnectWhatsApp({
               <div className="flex items-start gap-3 rounded-md bg-emerald-50 p-4 text-sm text-emerald-800 ring-1 ring-emerald-200">
                 <CheckCircle2 size={18} className="mt-0.5 shrink-0" />
                 <p>
-                  Numero conectado correctamente. Copia el identificador y
-                  agregalo en Vercel como{" "}
+                  Numero conectado correctamente. Agrega los dos identificadores
+                  en Vercel como{" "}
                   <code className="font-semibold">WHATSAPP_PHONE_NUMBER_ID</code>
+                  {" "}y{" "}
+                  <code className="font-semibold">
+                    WHATSAPP_BUSINESS_ACCOUNT_ID
+                  </code>
                   , luego haz redeploy.
                 </p>
               </div>
@@ -167,11 +181,13 @@ export default function ConnectWhatsApp({
                     </code>
                     <button
                       type="button"
-                      onClick={copyPhoneNumberId}
-                      className="inline-flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 transition hover:bg-zinc-50"
+                      onClick={() =>
+                        copyIdentifier(result.phoneNumberId as string, "phone")
+                      }
+                      className="pressable inline-flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
                     >
                       <Copy size={14} />
-                      {copied ? "Copiado" : "Copiar"}
+                      {copied === "phone" ? "Copiado" : "Copiar"}
                     </button>
                   </div>
                 </div>
@@ -188,9 +204,19 @@ export default function ConnectWhatsApp({
                   <span className="font-medium text-zinc-700">
                     Cuenta de WhatsApp Business (WABA ID)
                   </span>
-                  <code className="rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-950">
-                    {result.wabaId}
-                  </code>
+                  <div className="flex items-center gap-2">
+                    <code className="flex-1 rounded-md border border-zinc-200 bg-zinc-50 px-3 py-2.5 text-sm text-zinc-950">
+                      {result.wabaId}
+                    </code>
+                    <button
+                      type="button"
+                      onClick={() => copyIdentifier(result.wabaId as string, "waba")}
+                      className="pressable inline-flex h-11 items-center gap-2 rounded-md border border-zinc-200 bg-white px-3 text-xs font-semibold text-zinc-700 hover:bg-zinc-50"
+                    >
+                      <Copy size={14} />
+                      {copied === "waba" ? "Copiado" : "Copiar"}
+                    </button>
+                  </div>
                 </div>
               ) : null}
             </div>
@@ -227,11 +253,20 @@ export default function ConnectWhatsApp({
               <button
                 type="button"
                 onClick={launch}
-                disabled={!sdkReady}
-                className="inline-flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={!sdkReady || connecting}
+                aria-busy={connecting}
+                className="pressable inline-flex h-11 items-center justify-center gap-2 rounded-md bg-emerald-600 px-4 text-sm font-semibold text-white shadow-sm hover:bg-emerald-700 disabled:opacity-50"
               >
-                <MessageCircle size={17} />
-                {sdkReady ? "Conectar mi numero de WhatsApp" : "Cargando SDK de Meta..."}
+                {connecting || !sdkReady ? (
+                  <LoaderCircle size={17} className="animate-spin" />
+                ) : (
+                  <MessageCircle size={17} />
+                )}
+                {!sdkReady
+                  ? "Cargando SDK de Meta..."
+                  : connecting
+                    ? "Abriendo conexion..."
+                    : "Conectar mi numero de WhatsApp"}
               </button>
             </div>
           )}

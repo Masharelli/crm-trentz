@@ -7,15 +7,17 @@ import { marcarLeida } from "./actions";
 export default function MarkAsRead({
   conversationId,
   unreadCount,
+  seenThrough,
 }: {
   conversationId: string;
   unreadCount: number;
+  seenThrough: string | null;
 }) {
   useEffect(() => {
     if (unreadCount > 0) {
-      void marcarLeida(conversationId);
+      void marcarLeida(conversationId, seenThrough);
     }
-  }, [conversationId, unreadCount]);
+  }, [conversationId, seenThrough, unreadCount]);
 
   return null;
 }

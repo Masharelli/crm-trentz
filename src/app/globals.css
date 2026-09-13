@@ -24,6 +24,48 @@ input {
   font: inherit;
 }
 
+/* Feedback tactil consistente para controles interactivos. */
+.pressable {
+  cursor: pointer;
+  transform-origin: center;
+  transition:
+    transform 120ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    color 160ms ease,
+    box-shadow 160ms ease,
+    opacity 160ms ease;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pressable:hover:not(:disabled) {
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.08);
+}
+
+.pressable:active:not(:disabled) {
+  transform: scale(0.96);
+  box-shadow: inset 0 1px 3px rgb(0 0 0 / 0.16);
+}
+
+.pressable:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+.pressable:disabled {
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pressable {
+    transition-duration: 0.01ms;
+  }
+
+  .pressable:active:not(:disabled) {
+    transform: none;
+  }
+}
+
 /* Barra de scroll siempre visible para tableros horizontales (kanban) */
 .board-scroll {
   scrollbar-width: thin;
