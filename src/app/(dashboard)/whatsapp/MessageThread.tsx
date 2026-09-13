@@ -83,7 +83,7 @@ function MediaContent({ message }: { message: MessageRow }) {
       <img
         src={message.mediaUrl}
         alt={message.body ?? "Imagen"}
-        className="mb-1 max-h-72 w-full rounded-lg object-cover"
+        className="mb-1 max-h-72 w-full rounded-lg bg-black/5 object-contain"
       />
     );
   }
@@ -282,6 +282,7 @@ export default function MessageThread({
                     </div>
                     {outbound &&
                     message.status === "failed" &&
+                    message.type === "text" &&
                     message.body ? (
                       <form action={enviarMensaje} className="mt-2 flex justify-end">
                         <input

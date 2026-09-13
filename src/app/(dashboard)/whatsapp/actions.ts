@@ -5,11 +5,14 @@ import { redirect } from "next/navigation";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { canWrite, getCurrentRole } from "@/lib/roles";
+import { createAdminClient } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import {
   listApprovedTemplates,
+  sendImageMessage,
   sendTemplateMessage,
   sendTextMessage,
+  uploadImage,
 } from "@/lib/whatsapp/client";
 import { WINDOW_MS } from "@/lib/whatsapp/phone";
 
@@ -146,6 +149,199 @@ export async function enviarMensaje(formData: FormData) {
       entity_id: conversation.id,
       action: "sent",
       description: `Mensaje de WhatsApp enviado: ${body.slice(0, 80)}`,
+    });
+  }
+
+  revalidatePath("/whatsapp");
+  redirect(back);
+}
+
+const imagenSchema = z.object({
+  conversation_id: z.string().uuid(),
+  body: z.string().trim().max(1024, "El texto de la imagen es demasiado largo."),
+});
+
+const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
+const IMAGE_TYPES = new Set(["image/jpeg", "image/png"]);
+
+function hasValidImageSignature(buffer: ArrayBuffer, mimeType: string): boolean {
+  const bytes = new Uint8Array(buffer);
+  if (mimeType === "image/jpeg") {
+    return bytes.length >= 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
+  }
+  return (
+    bytes.length >= 8 &&
+    bytes[0] === 0x89 &&
+    bytes[1] === 0x50 &&
+    bytes[2] === 0x4e &&
+    bytes[3] === 0x47 &&
+    bytes[4] === 0x0d &&
+    bytes[5] === 0x0a &&
+    bytes[6] === 0x1a &&
+    bytes[7] === 0x0a
+  );
+}
+
+export async function enviarImagen(formData: FormData) {
+  const { supabase, user } = await requireWriter();
+  const parsed = imagenSchema.safeParse({
+    conversation_id: formData.get("conversation_id"),
+    body: formData.get("body") ?? "",
+  });
+  const imageFile = formData.get("image");
+
+  if (!parsed.success) {
+    const message = parsed.error.issues[0]?.message ?? "Datos invalidos.";
+    redirect(`/whatsapp?error=${encodeURIComponent(message)}`);
+  }
+
+  const back = `/whatsapp?c=${parsed.data.conversation_id}`;
+  if (!(imageFile instanceof File) || imageFile.size === 0) {
+    redirect(`${back}&error=${encodeURIComponent("Selecciona una imagen.")}`);
+  }
+  if (!IMAGE_TYPES.has(imageFile.type)) {
+    redirect(
+      `${back}&error=${encodeURIComponent("Solo se permiten imagenes JPG o PNG.")}`,
+    );
+  }
+  if (imageFile.size > MAX_IMAGE_BYTES) {
+    redirect(
+      `${back}&error=${encodeURIComponent("La imagen no puede superar 5 MB.")}`,
+    );
+  }
+
+  const { data: conversation } = await supabase
+    .from("whatsapp_conversations")
+    .select("id, wa_id, client_id, last_inbound_at")
+    .eq("id", parsed.data.conversation_id)
+    .maybeSingle();
+  if (!conversation) {
+    redirect(`${back}&error=${encodeURIComponent("Conversacion no encontrada.")}`);
+  }
+
+  const windowOpen =
+    conversation.last_inbound_at &&
+    Date.now() - new Date(conversation.last_inbound_at).getTime() < WINDOW_MS;
+  if (!windowOpen) {
+    redirect(
+      `${back}&error=${encodeURIComponent("La ventana de 24 horas expiro. Para enviar una imagen, el cliente debe responder primero.")}`,
+    );
+  }
+
+  const buffer = await imageFile.arrayBuffer();
+  if (!hasValidImageSignature(buffer, imageFile.type)) {
+    redirect(
+      `${back}&error=${encodeURIComponent("El archivo no contiene una imagen valida.")}`,
+    );
+  }
+
+  const caption = parsed.data.body;
+  const preview = caption || "[Imagen]";
+  const now = new Date().toISOString();
+  const { data: pendingMessage, error: insertError } = await supabase
+    .from("whatsapp_messages")
+    .insert({
+      conversation_id: conversation.id,
+      wamid: null,
+      direction: "outbound",
+      source: "api",
+      type: "image",
+      body: preview,
+      status: "pending",
+      wa_timestamp: now,
+      sent_by: user.id,
+    })
+    .select("id")
+    .single();
+  if (insertError || !pendingMessage) {
+    redirect(
+      `${back}&error=${encodeURIComponent("No se pudo preparar la imagen. No fue enviada.")}`,
+    );
+  }
+
+  const admin = createAdminClient();
+  const extension = imageFile.type === "image/png" ? "png" : "jpg";
+  const mediaPath = `${conversation.id}/${pendingMessage.id}.${extension}`;
+  const { error: storageError } = await admin.storage
+    .from("whatsapp-media")
+    .upload(mediaPath, buffer, {
+      contentType: imageFile.type,
+      upsert: true,
+    });
+  if (storageError) {
+    await admin
+      .from("whatsapp_messages")
+      .update({ status: "failed", error_message: storageError.message })
+      .eq("id", pendingMessage.id);
+    redirect(
+      `${back}&error=${encodeURIComponent("No se pudo guardar la imagen. Intenta de nuevo.")}`,
+    );
+  }
+
+  await admin
+    .from("whatsapp_messages")
+    .update({ media_path: mediaPath, media_mime_type: imageFile.type })
+    .eq("id", pendingMessage.id);
+
+  const uploaded = await uploadImage(
+    new Blob([buffer], { type: imageFile.type }),
+    imageFile.name || `imagen.${extension}`,
+  );
+  if (!uploaded.mediaId) {
+    await admin
+      .from("whatsapp_messages")
+      .update({
+        status: "failed",
+        error_message: uploaded.error ?? "Meta no acepto la imagen.",
+      })
+      .eq("id", pendingMessage.id);
+    revalidatePath("/whatsapp");
+    redirect(
+      `${back}&error=${encodeURIComponent("Meta no pudo recibir la imagen. Intenta de nuevo.")}`,
+    );
+  }
+
+  const result = await sendImageMessage(
+    conversation.wa_id,
+    uploaded.mediaId,
+    caption || undefined,
+  );
+  await admin
+    .from("whatsapp_messages")
+    .update({
+      wamid: result.wamid ?? null,
+      status: result.error ? "failed" : "sent",
+      error_message: result.error ?? null,
+    })
+    .eq("id", pendingMessage.id);
+
+  if (result.error) {
+    revalidatePath("/whatsapp");
+    redirect(
+      `${back}&error=${encodeURIComponent("No se pudo enviar la imagen. Intenta de nuevo.")}`,
+    );
+  }
+
+  const { error: conversationError } = await supabase
+    .from("whatsapp_conversations")
+    .update({ last_message_at: now, last_message_preview: preview })
+    .eq("id", conversation.id);
+  if (conversationError) {
+    redirect(
+      `${back}&error=${encodeURIComponent("La imagen fue enviada, pero la bandeja no pudo actualizarse.")}`,
+    );
+  }
+
+  if (conversation.client_id) {
+    await logActivity(supabase, {
+      actor_id: user.id,
+      client_id: conversation.client_id,
+      entity_type: "whatsapp_message",
+      entity_id: conversation.id,
+      action: "sent",
+      description: caption
+        ? `Imagen de WhatsApp enviada: ${caption.slice(0, 80)}`
+        : "Imagen de WhatsApp enviada",
     });
   }
 

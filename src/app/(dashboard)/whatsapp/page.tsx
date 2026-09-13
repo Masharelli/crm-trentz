@@ -219,7 +219,7 @@ export default async function WhatsAppPage({ searchParams }: Props) {
           {conversations.length > 0 || selected ? (
             <>
               <div
-                className={`w-full flex-col md:flex md:w-80 md:shrink-0 md:border-r md:border-zinc-200 ${
+                className={`w-full flex-col md:flex md:w-[22rem] md:shrink-0 md:border-r md:border-zinc-200 xl:w-96 ${
                   selected ? "hidden" : "flex"
                 }`}
               >

@@ -88,26 +88,31 @@ export default function ConversationList({
 
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="grid gap-2 border-b border-zinc-100 p-3">
+      <div className="grid gap-2.5 border-b border-zinc-100 p-3">
         <BuscarConversacion initialValue={q ?? ""} filter={filter} />
-        <div className="flex gap-1" aria-label="Filtrar conversaciones">
+        <div
+          className="grid grid-cols-6 gap-1.5"
+          aria-label="Filtrar conversaciones"
+        >
           {(
             [
               ["all", "Todas"],
-              ["unread", "No leidas"],
+              ["unread", "No leídas"],
               ["unlinked", "Sin vincular"],
-              ["mine", "Mias"],
+              ["mine", "Mías"],
               ["resolved", "Resueltas"],
             ] as const
-          ).map(([value, label]) => (
+          ).map(([value, label], index) => (
             <Link
               key={value}
               href={listHref({ filter: value, page: 1 })}
               aria-current={filter === value ? "page" : undefined}
-              className={`pressable inline-flex h-8 items-center rounded-md px-2.5 text-xs font-semibold ${
+              className={`pressable inline-flex h-8 items-center justify-center whitespace-nowrap rounded-lg px-2 text-xs font-semibold ${
+                index < 3 ? "col-span-2" : "col-span-3"
+              } ${
                 filter === value
-                  ? "bg-zinc-950 text-white shadow-sm"
-                  : "bg-zinc-100 text-zinc-600 hover:bg-zinc-200"
+                  ? "bg-emerald-600 text-white shadow-sm"
+                  : "bg-zinc-100 text-zinc-600 hover:bg-emerald-50 hover:text-emerald-800"
               }`}
             >
               {label}
@@ -127,7 +132,9 @@ export default function ConversationList({
               key={conv.id}
               href={listHref({ conversationId: conv.id })}
               className={`pressable flex items-center gap-3 border-b border-zinc-50 px-4 py-3 ${
-                active ? "bg-zinc-100" : "hover:bg-zinc-50"
+                active
+                  ? "bg-emerald-50 shadow-[inset_3px_0_0_#10b981]"
+                  : "hover:bg-zinc-50"
               }`}
             >
               <div className="grid size-10 shrink-0 place-items-center rounded-full bg-emerald-100 text-sm font-semibold text-emerald-800">
@@ -149,7 +156,7 @@ export default function ConversationList({
                   </p>
                   <span className="flex shrink-0 items-center gap-1.5">
                     {sinVincular ? (
-                      <span className="inline-flex h-5 items-center whitespace-nowrap rounded-md bg-amber-50 px-1.5 text-[10px] font-semibold text-amber-800 ring-1 ring-amber-200">
+                      <span className="inline-flex h-5 items-center whitespace-nowrap rounded-md bg-amber-50 px-1.5 text-[11px] font-semibold text-amber-800 ring-1 ring-amber-200">
                         Sin vincular
                       </span>
                     ) : null}

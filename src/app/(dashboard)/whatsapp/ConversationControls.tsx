@@ -16,15 +16,15 @@ export default function ConversationControls({
   team: Array<{ id: string; full_name: string }>;
 }) {
   return (
-    <div className="flex flex-wrap items-center gap-2 border-b border-zinc-100 bg-white px-4 py-2 sm:px-6">
-      <form action={actualizarResponsable} className="flex items-center gap-1.5">
+    <div className="flex flex-wrap items-center justify-between gap-2 border-b border-zinc-100 bg-zinc-50/80 px-4 py-2 sm:px-6">
+      <form action={actualizarResponsable} className="flex min-w-0 items-center gap-1.5">
         <input type="hidden" name="conversation_id" value={conversationId} />
         <UserRound size={14} className="text-zinc-400" />
         <select
           name="assigned_to"
           defaultValue={assignedTo ?? ""}
           aria-label="Responsable de la conversacion"
-          className="h-8 max-w-44 rounded-md border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
+          className="h-8 min-w-0 max-w-48 rounded-md border border-zinc-200 bg-white px-2 text-xs font-medium text-zinc-700 outline-none focus:border-emerald-500 focus:ring-2 focus:ring-emerald-100"
         >
           <option value="">Sin responsable</option>
           {team.map((member) => (
@@ -41,7 +41,7 @@ export default function ConversationControls({
         </PendingButton>
       </form>
 
-      <form action={actualizarEstado} className="ml-auto">
+      <form action={actualizarEstado}>
         <input type="hidden" name="conversation_id" value={conversationId} />
         <input
           type="hidden"

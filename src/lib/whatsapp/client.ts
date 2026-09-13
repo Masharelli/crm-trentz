@@ -23,6 +23,10 @@ export type SendResult =
   | { wamid: string; error?: undefined }
   | { wamid?: undefined; error: string };
 
+export type UploadResult =
+  | { mediaId: string; error?: undefined }
+  | { mediaId?: undefined; error: string };
+
 export async function sendTextMessage(
   to: string,
   body: string,
@@ -54,6 +58,76 @@ export async function sendTextMessage(
     if (!wamid) return { error: "Respuesta de Meta sin id de mensaje" };
 
     return { wamid };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Error de red" };
+  }
+}
+
+export async function uploadImage(
+  image: Blob,
+  fileName: string,
+): Promise<UploadResult> {
+  const { accessToken, phoneNumberId } = getConfig();
+
+  try {
+    const formData = new FormData();
+    formData.append("messaging_product", "whatsapp");
+    formData.append("file", image, fileName);
+
+    const res = await fetch(graphUrl(`${phoneNumberId}/media`), {
+      method: "POST",
+      headers: { Authorization: `Bearer ${accessToken}` },
+      body: formData,
+    });
+    const json = await res.json();
+
+    if (!res.ok) {
+      return { error: json?.error?.message ?? `Graph API ${res.status}` };
+    }
+
+    return json?.id
+      ? { mediaId: String(json.id) }
+      : { error: "Meta no regreso el identificador de la imagen" };
+  } catch (e) {
+    return { error: e instanceof Error ? e.message : "Error de red" };
+  }
+}
+
+export async function sendImageMessage(
+  to: string,
+  mediaId: string,
+  caption?: string,
+): Promise<SendResult> {
+  const { accessToken, phoneNumberId } = getConfig();
+
+  try {
+    const res = await fetch(graphUrl(`${phoneNumberId}/messages`), {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messaging_product: "whatsapp",
+        recipient_type: "individual",
+        to,
+        type: "image",
+        image: {
+          id: mediaId,
+          ...(caption ? { caption } : {}),
+        },
+      }),
+    });
+    const json = await res.json();
+
+    if (!res.ok) {
+      return { error: json?.error?.message ?? `Graph API ${res.status}` };
+    }
+
+    const wamid = json?.messages?.[0]?.id;
+    return wamid
+      ? { wamid }
+      : { error: "Respuesta de Meta sin id de mensaje" };
   } catch (e) {
     return { error: e instanceof Error ? e.message : "Error de red" };
   }
