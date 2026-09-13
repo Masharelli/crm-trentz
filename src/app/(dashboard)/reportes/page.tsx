@@ -1,21 +1,20 @@
 import { redirect } from "next/navigation";
+import {
+  businessDateKey,
+  getBusinessDateParts,
+  monthStartDateKey,
+} from "@/lib/business-date";
 import { createClient } from "@/lib/supabase/server";
 
-type PaidRow = {
-  amount: number | string;
-  discount_pct: number | string | null;
-  paid_at: string | null;
-};
-
-type UnpaidRow = {
-  amount: number | string;
-  discount_pct: number | string | null;
-  due_date: string;
-};
-
-type ClientRow = {
-  status: string | null;
-  created_at: string;
+type ReportSummary = {
+  clientes_activos: number | string;
+  clients_by_month: Record<string, number | string>;
+  cobrado_anio: number | string;
+  por_cobrar: number | string;
+  revenue_by_month: Record<string, number | string>;
+  status_counts: Record<string, number | string>;
+  total_clientes: number | string;
+  vencido: number | string;
 };
 
 const STATUS_LABEL: Record<string, string> = {
@@ -36,11 +35,6 @@ const MONTH_ABBR = [
   "ene", "feb", "mar", "abr", "may", "jun",
   "jul", "ago", "sep", "oct", "nov", "dic",
 ];
-
-function net(row: { amount: number | string; discount_pct: number | string | null }) {
-  const discount = Number(row.discount_pct ?? 0);
-  return Number(row.amount ?? 0) * (1 - discount / 100);
-}
 
 function money(value: number) {
   return new Intl.NumberFormat("es-MX", {
@@ -126,81 +120,56 @@ export default async function ReportesPage() {
   if (!user) redirect("/login");
 
   const now = new Date();
-  const todayKey = now.toISOString().slice(0, 10);
-  const yearStart = `${now.getUTCFullYear()}-01-01`;
+  const todayKey = businessDateKey(now);
+  const { year } = getBusinessDateParts(now);
+  const yearStart = `${year}-01-01`;
+  const windowStartKey = monthStartDateKey(now, -11);
 
-  // Ventana de 12 meses: primer dia del mes hace 11 meses.
-  const windowStart = new Date(
-    Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11, 1),
-  );
-  const windowStartKey = windowStart.toISOString().slice(0, 10);
+  const { data, error } = await supabase.rpc("get_crm_report_summary", {
+    p_today: todayKey,
+    p_window_start: windowStartKey,
+    p_year_start: yearStart,
+  });
 
-  const [paidRes, unpaidRes, clientsRes] = await Promise.all([
-    supabase
-      .from("payments")
-      .select("amount, discount_pct, paid_at")
-      .not("paid_at", "is", null)
-      .gte("paid_at", windowStartKey),
-    supabase
-      .from("payments")
-      .select("amount, discount_pct, due_date")
-      .in("status", ["pending", "scheduled", "overdue"]),
-    supabase.from("clients").select("status, created_at"),
-  ]);
+  if (error || !data) {
+    throw new Error("No se pudieron cargar los reportes.");
+  }
 
-  const paid = (paidRes.data ?? []) as PaidRow[];
-  const unpaid = (unpaidRes.data ?? []) as UnpaidRow[];
-  const clients = (clientsRes.data ?? []) as ClientRow[];
+  const summary = data as ReportSummary;
 
   // Buckets de 12 meses en orden.
   const buckets: { key: string; label: string }[] = [];
+  const windowStart = new Date(`${windowStartKey}T12:00:00.000Z`);
   for (let i = 0; i < 12; i++) {
-    const d = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth() - 11 + i, 1));
+    const d = new Date(
+      Date.UTC(windowStart.getUTCFullYear(), windowStart.getUTCMonth() + i, 1),
+    );
     buckets.push({ key: monthKey(d), label: MONTH_ABBR[d.getUTCMonth()] });
-  }
-
-  const revenueByMonth = new Map<string, number>();
-  for (const row of paid) {
-    if (!row.paid_at) continue;
-    const key = row.paid_at.slice(0, 7);
-    revenueByMonth.set(key, (revenueByMonth.get(key) ?? 0) + net(row));
-  }
-
-  const clientsByMonth = new Map<string, number>();
-  for (const row of clients) {
-    const key = row.created_at.slice(0, 7);
-    clientsByMonth.set(key, (clientsByMonth.get(key) ?? 0) + 1);
   }
 
   const revenueSeries = buckets.map((b) => ({
     label: b.label,
-    value: revenueByMonth.get(b.key) ?? 0,
+    value: Number(summary.revenue_by_month?.[b.key] ?? 0),
   }));
   const newClientsSeries = buckets.map((b) => ({
     label: b.label,
-    value: clientsByMonth.get(b.key) ?? 0,
+    value: Number(summary.clients_by_month?.[b.key] ?? 0),
   }));
 
-  // KPIs
-  const cobradoAnio = paid
-    .filter((row) => (row.paid_at ?? "") >= yearStart)
-    .reduce((sum, row) => sum + net(row), 0);
-  const porCobrar = unpaid.reduce((sum, row) => sum + net(row), 0);
-  const vencido = unpaid
-    .filter((row) => row.due_date < todayKey)
-    .reduce((sum, row) => sum + net(row), 0);
-  const porVencer = porCobrar - vencido;
-  const activos = clients.filter((c) => c.status === "active").length;
+  const cobradoAnio = Number(summary.cobrado_anio ?? 0);
+  const porVencer = Number(summary.por_cobrar ?? 0);
+  const vencido = Number(summary.vencido ?? 0);
+  const activos = Number(summary.clientes_activos ?? 0);
 
   // Distribuciones
   const statusOrder = ["active", "prospect", "paused", "closed"];
   const statusCounts = statusOrder.map((status) => ({
     status,
     label: STATUS_LABEL[status],
-    count: clients.filter((c) => c.status === status).length,
+    count: Number(summary.status_counts?.[status] ?? 0),
   }));
   const maxStatus = Math.max(1, ...statusCounts.map((s) => s.count));
-  const totalClientes = clients.length;
+  const totalClientes = Number(summary.total_clientes ?? 0);
 
   return (
     <>

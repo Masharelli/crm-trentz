@@ -5,13 +5,21 @@ import {
   type DragEndEvent,
   DragOverlay,
   type DragStartEvent,
+  KeyboardSensor,
   PointerSensor,
   useDraggable,
   useDroppable,
   useSensor,
   useSensors,
 } from "@dnd-kit/core";
-import { Funnel, GripVertical, Pencil, X } from "lucide-react";
+import {
+  AlertCircle,
+  Funnel,
+  GripVertical,
+  Pencil,
+  Workflow,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useOptimistic, useRef, useState, useTransition } from "react";
 import { moverClienteDeEtapa, quitarClienteDeFunnel } from "../actions";
@@ -21,6 +29,7 @@ type Stage = {
   id: string;
   name: string;
   position: number;
+  taskFlowName: string | null;
 };
 
 type Member = {
@@ -132,9 +141,20 @@ function StageColumn({
       }`}
     >
       <div className="flex items-center justify-between gap-2 px-4 py-3">
-        <p className="truncate text-sm font-semibold text-zinc-950">
-          {stage.name}
-        </p>
+        <div className="min-w-0">
+          <p className="truncate text-sm font-semibold text-zinc-950">
+            {stage.name}
+          </p>
+          {stage.taskFlowName ? (
+            <p
+              className="mt-1 flex items-center gap-1 truncate text-xs font-medium text-violet-700"
+              title={`Crea automaticamente el flujo ${stage.taskFlowName}`}
+            >
+              <Workflow size={12} className="shrink-0" />
+              {stage.taskFlowName}
+            </p>
+          ) : null}
+        </div>
         <span className="grid size-6 shrink-0 place-items-center rounded-md bg-zinc-200/70 text-xs font-semibold text-zinc-600">
           {members.length}
         </span>
@@ -172,6 +192,7 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
     },
   );
   const [activeMember, setActiveMember] = useState<Member | null>(null);
+  const [moveError, setMoveError] = useState<string | null>(null);
   const [, startTransition] = useTransition();
   const scrollRef = useRef<HTMLDivElement>(null);
   const pan = useRef<{
@@ -182,6 +203,7 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 6 } }),
+    useSensor(KeyboardSensor),
   );
 
   function handleDragStart(event: DragStartEvent) {
@@ -203,7 +225,8 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
 
     startTransition(async () => {
       applyAction({ type: "move", memberId, stageId });
-      await moverClienteDeEtapa(funnelId, memberId, stageId);
+      const result = await moverClienteDeEtapa(funnelId, memberId, stageId);
+      setMoveError(result.error);
     });
   }
 
@@ -248,7 +271,8 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
 
     startTransition(async () => {
       applyAction({ type: "remove", memberId: member.id });
-      await quitarClienteDeFunnel(funnelId, member.id);
+      const result = await quitarClienteDeFunnel(funnelId, member.id);
+      setMoveError(result.error);
     });
   }
 
@@ -278,31 +302,42 @@ export default function FunnelBoard({ funnelId, stages, members }: Props) {
   }
 
   return (
-    <DndContext
-      onDragEnd={handleDragEnd}
-      onDragStart={handleDragStart}
-      sensors={sensors}
-    >
-      <div
-        ref={scrollRef}
-        onPointerDown={handlePanStart}
-        onPointerMove={handlePanMove}
-        onPointerUp={handlePanEnd}
-        onPointerCancel={handlePanEnd}
-        className="board-scroll flex cursor-grab select-none items-start gap-4 overflow-x-auto pb-4 active:cursor-grabbing"
+    <div>
+      {moveError ? (
+        <p
+          role="alert"
+          className="mb-4 flex items-start gap-2 rounded-lg border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700"
+        >
+          <AlertCircle size={17} className="mt-0.5 shrink-0" />
+          {moveError}
+        </p>
+      ) : null}
+      <DndContext
+        onDragEnd={handleDragEnd}
+        onDragStart={handleDragStart}
+        sensors={sensors}
       >
-        {stages.map((stage) => (
-          <StageColumn
-            key={stage.id}
-            stage={stage}
-            members={optimisticMembers.filter((m) => m.stageId === stage.id)}
-            onRemove={handleRemove}
-          />
-        ))}
-      </div>
-      <DragOverlay>
-        {activeMember ? <MemberCard member={activeMember} overlay /> : null}
-      </DragOverlay>
-    </DndContext>
+        <div
+          ref={scrollRef}
+          onPointerDown={handlePanStart}
+          onPointerMove={handlePanMove}
+          onPointerUp={handlePanEnd}
+          onPointerCancel={handlePanEnd}
+          className="board-scroll flex cursor-grab select-none items-start gap-4 overflow-x-auto pb-4 active:cursor-grabbing"
+        >
+          {stages.map((stage) => (
+            <StageColumn
+              key={stage.id}
+              stage={stage}
+              members={optimisticMembers.filter((m) => m.stageId === stage.id)}
+              onRemove={handleRemove}
+            />
+          ))}
+        </div>
+        <DragOverlay>
+          {activeMember ? <MemberCard member={activeMember} overlay /> : null}
+        </DragOverlay>
+      </DndContext>
+    </div>
   );
 }

@@ -4,7 +4,6 @@ import {
   ChevronRight,
   FileUp,
   LogOut,
-  MoreHorizontal,
   Plus,
   Search,
   Upload,
@@ -72,21 +71,21 @@ export default async function Home() {
             <div className="grid grid-cols-2 gap-2 sm:flex">
               <Link
                 href="/clientes/nuevo"
-                className="inline-flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800"
+                className="pressable inline-flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-md bg-zinc-950 px-4 text-sm font-semibold text-white hover:bg-zinc-800"
               >
                 <Plus size={17} />
                 Cliente
               </Link>
               <Link
                 href="/documentos/nuevo"
-                className="inline-flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
+                className="pressable inline-flex h-11 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
               >
                 <Upload size={17} />
                 Documento
               </Link>
               <form action={signOut} className="col-span-2 sm:col-span-1">
                 <button
-                  className="inline-flex h-11 whitespace-nowrap w-full items-center justify-center gap-2 rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 transition hover:bg-zinc-50"
+                  className="pressable inline-flex h-11 w-full items-center justify-center gap-2 whitespace-nowrap rounded-md border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-800 hover:bg-zinc-50"
                   type="submit"
                 >
                   <LogOut size={17} />
@@ -112,9 +111,11 @@ export default async function Home() {
             const Icon = metric.icon;
 
             return (
-              <article
-                className="rounded-lg border border-zinc-200 bg-white p-4 sm:p-5"
+              <Link
+                href={metric.href}
+                className="pressable group rounded-lg border border-zinc-200 bg-white p-4 hover:border-zinc-300 hover:bg-zinc-50 sm:p-5"
                 key={metric.label}
+                aria-label={`Ver ${metric.label.toLowerCase()}`}
               >
                 <div className="flex items-start justify-between gap-2 sm:gap-4">
                   <div className="min-w-0">
@@ -134,7 +135,7 @@ export default async function Home() {
                 <p className={`mt-3 text-xs font-medium sm:mt-4 sm:text-sm ${metric.tone}`}>
                   {metric.detail}
                 </p>
-              </article>
+              </Link>
             );
           })}
         </section>
@@ -148,13 +149,13 @@ export default async function Home() {
                   Pagos que requieren seguimiento esta semana.
                 </p>
               </div>
-              <button
-                className="inline-flex h-10 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50"
-                type="button"
+              <Link
+                href="/calendario"
+                className="pressable inline-flex h-10 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
               >
                 <CalendarDays size={17} />
                 Ver calendario
-              </button>
+              </Link>
             </div>
 
             <div className="overflow-x-auto">
@@ -172,7 +173,7 @@ export default async function Home() {
                 <tbody className="divide-y divide-zinc-100">
                   {upcomingPayments.length > 0 ? (
                     upcomingPayments.map((payment) => (
-                      <tr key={`${payment.client}-${payment.dueDate}`}>
+                      <tr key={payment.id} className="hover:bg-zinc-50">
                         <td className="px-5 py-4 font-medium text-zinc-950">
                           {payment.client}
                         </td>
@@ -193,12 +194,13 @@ export default async function Home() {
                           </span>
                         </td>
                         <td className="px-5 py-4 text-right">
-                          <button
-                            className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
+                          <Link
+                            href={`/pagos/${payment.id}`}
+                            className="pressable grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
                             aria-label={`Abrir pago de ${payment.client}`}
                           >
                             <ChevronRight size={17} />
-                          </button>
+                          </Link>
                         </td>
                       </tr>
                     ))
@@ -232,9 +234,10 @@ export default async function Home() {
               <div className="mt-5 grid gap-4">
                 {recentClients.length > 0 ? (
                   recentClients.map((client) => (
-                    <article
-                      className="rounded-md border border-zinc-200 p-4"
-                      key={client.name}
+                    <Link
+                      href={`/clientes/${client.id}`}
+                      className="pressable block rounded-md border border-zinc-200 p-4 hover:border-zinc-300 hover:bg-zinc-50"
+                      key={client.id}
                     >
                       <div className="flex items-start justify-between gap-3">
                         <div>
@@ -250,7 +253,7 @@ export default async function Home() {
                       <p className="mt-3 text-sm text-zinc-600">
                         {client.lastMove}
                       </p>
-                    </article>
+                    </Link>
                   ))
                 ) : (
                   <div className="rounded-md border border-dashed border-zinc-300 p-4 text-sm text-zinc-500">
@@ -268,12 +271,14 @@ export default async function Home() {
                     Tareas automaticas que despues enviaremos por correo.
                   </p>
                 </div>
-                <button
-                  className="grid size-9 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950"
-                  aria-label="Opciones de recordatorios"
+                <Link
+                  href="/correos"
+                  className="pressable inline-flex h-9 items-center gap-1.5 rounded-md px-2.5 text-xs font-semibold text-zinc-600 hover:bg-zinc-100 hover:text-zinc-950"
+                  aria-label="Ver historial de avisos enviados"
                 >
-                  <MoreHorizontal size={18} />
-                </button>
+                  Ver avisos
+                  <ChevronRight size={15} />
+                </Link>
               </div>
 
               <div className="mt-5 grid gap-3">
@@ -281,20 +286,25 @@ export default async function Home() {
                   const Icon = reminder.icon;
 
                   return (
-                    <div
-                      className="flex items-start gap-3 rounded-md bg-zinc-50 p-3"
+                    <Link
+                      href={reminder.href}
+                      className="pressable flex items-start gap-3 rounded-md bg-zinc-50 p-3 hover:bg-zinc-100"
                       key={reminder.title}
                     >
                       <div className="grid size-9 shrink-0 place-items-center rounded-md bg-white text-zinc-700 ring-1 ring-zinc-200">
                         <Icon size={17} />
                       </div>
-                      <div>
+                      <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold">{reminder.title}</p>
                         <p className="mt-1 text-sm text-zinc-500">
                           {reminder.detail}
                         </p>
                       </div>
-                    </div>
+                      <ChevronRight
+                        size={16}
+                        className="mt-2 shrink-0 text-zinc-400"
+                      />
+                    </Link>
                   );
                 })}
               </div>
@@ -307,13 +317,16 @@ export default async function Home() {
             <div>
               <h2 className="text-lg font-semibold">Cola de documentos</h2>
               <p className="mt-1 text-sm text-zinc-500">
-                Archivos subidos por cliente antes de mandarlos a storage.
+                Archivos recientes y pendientes de revision.
               </p>
             </div>
-            <button className="inline-flex h-10 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50">
+            <Link
+              href="/documentos/nuevo"
+              className="pressable inline-flex h-10 whitespace-nowrap items-center justify-center gap-2 rounded-md border border-zinc-200 px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-50"
+            >
               <FileUp size={17} />
               Subir archivo
-            </button>
+            </Link>
           </div>
 
           <div className="grid divide-y divide-zinc-100">
@@ -321,7 +334,7 @@ export default async function Home() {
               documentQueue.map((document) => (
                 <div
                   className="grid gap-3 px-5 py-4 sm:grid-cols-[minmax(0,1fr)_180px_120px_100px] sm:items-center"
-                  key={document.file}
+                  key={document.id}
                 >
                   <div className="min-w-0">
                     <p className="truncate font-medium">{document.file}</p>
@@ -333,9 +346,14 @@ export default async function Home() {
                   <p className="text-sm font-medium text-zinc-800">
                     {document.status}
                   </p>
-                  <button className="inline-flex h-9 whitespace-nowrap items-center justify-center gap-2 rounded-md bg-zinc-100 px-3 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-200">
+                  <a
+                    href={document.url ?? "/documentos"}
+                    target={document.url ? "_blank" : undefined}
+                    rel={document.url ? "noopener noreferrer" : undefined}
+                    className="pressable inline-flex h-9 whitespace-nowrap items-center justify-center gap-2 rounded-md bg-zinc-100 px-3 text-sm font-semibold text-zinc-700 hover:bg-zinc-200"
+                  >
                     Abrir
-                  </button>
+                  </a>
                 </div>
               ))
             ) : (

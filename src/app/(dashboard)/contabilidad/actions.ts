@@ -151,7 +151,16 @@ export async function eliminarGasto(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("office_expenses").delete().eq("id", id);
+  const { error } = await supabase
+    .from("office_expenses")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    redirect(
+      `/contabilidad?error=${encodeURIComponent("No se pudo eliminar el gasto. Verifica tus permisos.")}`,
+    );
+  }
   revalidatePath("/contabilidad");
   revalidatePath("/");
   redirect(`/contabilidad?toast=${encodeURIComponent("Gasto eliminado correctamente")}`);

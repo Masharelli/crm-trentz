@@ -32,7 +32,7 @@ function buildHtml(body: string, subject: string): string {
       <p style="margin:0;font-size:18px;font-weight:600;color:#fff;letter-spacing:-0.01em;">Trentz CRM</p>
     </div>
     <div style="padding:32px;">
-      <h2 style="margin:0 0 20px;font-size:20px;font-weight:600;color:#09090b;">${subject}</h2>
+      <h2 style="margin:0 0 20px;font-size:20px;font-weight:600;color:#09090b;">${subject.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")}</h2>
       <p style="margin:0;font-size:15px;line-height:1.8;color:#3f3f46;">${escaped}</p>
     </div>
     <div style="padding:20px 32px;background:#f4f4f5;border-top:1px solid #e4e4e7;">
@@ -82,7 +82,7 @@ export async function enviarCorreo(formData: FormData) {
     );
   }
 
-  await supabase.from("email_notifications").insert({
+  const { error: logError } = await supabase.from("email_notifications").insert({
     client_id: d.client_id,
     recipient_email: d.recipient_email,
     subject: d.subject,
@@ -92,6 +92,13 @@ export async function enviarCorreo(formData: FormData) {
     sent_at: new Date().toISOString(),
     created_by: user.id,
   });
+
+  if (logError) {
+    revalidatePath("/correos");
+    redirect(
+      `/correos?error=${encodeURIComponent("El correo se envio, pero no pudo registrarse en el historial.")}`,
+    );
+  }
 
   revalidatePath("/correos");
   redirect(`/correos?toast=${encodeURIComponent("Correo enviado correctamente")}`);
@@ -105,7 +112,16 @@ export async function eliminarCorreo(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("email_notifications").delete().eq("id", id);
+  const { error } = await supabase
+    .from("email_notifications")
+    .delete()
+    .eq("id", id);
+
+  if (error) {
+    redirect(
+      `/correos?error=${encodeURIComponent("No se pudo eliminar el correo del historial.")}`,
+    );
+  }
   revalidatePath("/correos");
   redirect(`/correos?toast=${encodeURIComponent("Correo eliminado correctamente")}`);
 }

@@ -15,19 +15,36 @@ const inputError = "border-rose-300 focus:border-rose-400 focus:ring-rose-100";
 
 const labelClass = "block text-sm font-medium text-zinc-700";
 
+type StepItem = {
+  name: string;
+  dueDays: string;
+};
+
 export default function NuevoFlujoForm() {
   const [name, setName] = useState("");
-  const [steps, setSteps] = useState<string[]>(["", "", ""]);
+  const [steps, setSteps] = useState<StepItem[]>([
+    { name: "", dueDays: "0" },
+    { name: "", dueDays: "1" },
+    { name: "", dueDays: "3" },
+  ]);
   const [errors, setErrors] = useState<{ name?: string; steps?: string }>({});
 
-  const cleanSteps = steps.map((s) => s.trim()).filter((s) => s !== "");
+  const cleanSteps = steps
+    .map((step) => ({
+      name: step.name.trim(),
+      due_days_after:
+        step.dueDays === "" ? null : Math.max(0, Number(step.dueDays)),
+    }))
+    .filter((step) => step.name !== "");
 
-  function updateStep(index: number, value: string) {
-    setSteps((prev) => prev.map((s, i) => (i === index ? value : s)));
+  function updateStep(index: number, updates: Partial<StepItem>) {
+    setSteps((prev) =>
+      prev.map((step, i) => (i === index ? { ...step, ...updates } : step)),
+    );
   }
 
   function addStep() {
-    setSteps((prev) => [...prev, ""]);
+    setSteps((prev) => [...prev, { name: "", dueDays: "" }]);
   }
 
   function removeStep(index: number) {
@@ -117,27 +134,45 @@ export default function NuevoFlujoForm() {
       <div className="space-y-3 px-6 py-6">
         <p className="text-sm text-zinc-500">
           Al asignar este flujo a un cliente, cada paso se convierte en una
-          tarea con su propio checkbox.
+          tarea. El plazo indica cuantos dias despues de la asignacion debe
+          vencer; dejalo vacio para crearla sin fecha.
         </p>
 
         {steps.map((step, index) => (
-          <div className="flex items-center gap-2" key={index}>
+          <div
+            className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-zinc-200 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
+            key={index}
+          >
             <span className="grid size-7 shrink-0 place-items-center rounded-md bg-zinc-100 text-xs font-semibold text-zinc-500">
               {index + 1}
             </span>
             <input
               className={`${inputClass} ${inputOk}`}
               onChange={(e) => {
-                updateStep(index, e.target.value);
+                updateStep(index, { name: e.target.value });
                 if (errors.steps) {
                   setErrors((prev) => ({ ...prev, steps: undefined }));
                 }
               }}
               placeholder={`Paso ${index + 1} (p. ej. Firmar contrato)`}
               type="text"
-              value={step}
+              value={step.name}
             />
-            <div className="flex shrink-0 items-center gap-1">
+            <label className="col-start-2 flex h-11 shrink-0 items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-600 sm:col-start-auto">
+              <span className="whitespace-nowrap">Vence en</span>
+              <input
+                aria-label={`Dias para vencer el paso ${index + 1}`}
+                className="w-16 bg-transparent text-right font-medium text-zinc-950 outline-none"
+                max={3650}
+                min={0}
+                onChange={(e) => updateStep(index, { dueDays: e.target.value })}
+                placeholder="—"
+                type="number"
+                value={step.dueDays}
+              />
+              <span>dias</span>
+            </label>
+            <div className="col-start-2 flex shrink-0 items-center justify-end gap-1 sm:col-start-auto">
               <button
                 aria-label="Subir paso"
                 className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 disabled:opacity-30"

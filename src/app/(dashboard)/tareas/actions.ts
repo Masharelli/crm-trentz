@@ -8,7 +8,14 @@ import { createClient } from "@/lib/supabase/server";
 const flujoSchema = z.object({
   name: z.string().min(2, "El nombre del flujo debe tener al menos 2 caracteres."),
   description: z.string().optional(),
-  steps: z.array(z.string().min(1)).min(1, "Agrega al menos un paso al flujo."),
+  steps: z
+    .array(
+      z.object({
+        name: z.string().min(1),
+        due_days_after: z.number().int().min(0).max(3650).nullable(),
+      }),
+    )
+    .min(1, "Agrega al menos un paso al flujo."),
 });
 
 const actualizarFlujoSchema = z.object({
@@ -17,6 +24,7 @@ const actualizarFlujoSchema = z.object({
       z.object({
         id: z.string().uuid().nullable(),
         name: z.string().min(1, "Los pasos no pueden estar vacios."),
+        due_days_after: z.number().int().min(0).max(3650).nullable(),
       }),
     )
     .min(1, "El flujo debe tener al menos un paso."),
@@ -91,10 +99,11 @@ export async function crearFlujo(formData: FormData) {
   }
 
   const { error: stepsError } = await supabase.from("task_flow_steps").insert(
-    d.steps.map((name, index) => ({
+    d.steps.map((step, index) => ({
       flow_id: flow.id,
-      name: name.trim(),
+      name: step.name.trim(),
       position: index,
+      due_days_after: step.due_days_after,
     })),
   );
 
@@ -144,39 +153,20 @@ export async function actualizarFlujo(id: string, formData: FormData) {
 
   const d = parsed.data;
 
-  const { error: flowError } = await supabase
-    .from("task_flows")
-    .update({ name, description: nullify(description) })
-    .eq("id", id);
+  const { error: flowError } = await supabase.rpc(
+    "update_task_flow_with_steps",
+    {
+      p_description: nullify(description),
+      p_flow_id: id,
+      p_name: name,
+      p_steps: d.steps,
+    },
+  );
 
   if (flowError) {
     redirect(
       `/tareas/flujos/${id}/editar?error=${encodeURIComponent(`No se pudo actualizar el flujo. (${flowError.message})`)}`,
     );
-  }
-
-  // Borra los pasos que ya no estan, actualiza los existentes e inserta los nuevos.
-  // Las asignaciones a clientes son copias, no se ven afectadas.
-  const keptIds = d.steps.filter((s) => s.id).map((s) => s.id as string);
-
-  let deleteQuery = supabase.from("task_flow_steps").delete().eq("flow_id", id);
-  if (keptIds.length > 0) {
-    deleteQuery = deleteQuery.not("id", "in", `(${keptIds.join(",")})`);
-  }
-  await deleteQuery;
-
-  for (const [index, step] of d.steps.entries()) {
-    if (step.id) {
-      await supabase
-        .from("task_flow_steps")
-        .update({ name: step.name.trim(), position: index })
-        .eq("id", step.id)
-        .eq("flow_id", id);
-    } else {
-      await supabase
-        .from("task_flow_steps")
-        .insert({ flow_id: id, name: step.name.trim(), position: index });
-    }
   }
 
   revalidatePath("/tareas/flujos");
@@ -193,7 +183,12 @@ export async function eliminarFlujo(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("task_flows").delete().eq("id", id);
+  const { error } = await supabase.from("task_flows").delete().eq("id", id);
+  if (error) {
+    redirect(
+      `/tareas/flujos?error=${encodeURIComponent("No se pudo eliminar el flujo. Verifica si esta vinculado a una automatizacion.")}`,
+    );
+  }
   revalidatePath("/tareas/flujos");
   redirect(
     `/tareas/flujos?toast=${encodeURIComponent("Flujo eliminado correctamente")}`,
@@ -290,9 +285,19 @@ export async function quitarFlujoDeCliente(clientFlowId: string, clientId: strin
 
   if (!user) redirect("/login");
 
-  await supabase.from("client_flows").delete().eq("id", clientFlowId);
+  const { error } = await supabase
+    .from("client_flows")
+    .delete()
+    .eq("id", clientFlowId)
+    .eq("client_id", clientId);
+
+  if (error) {
+    return { error: "No se pudo quitar el flujo del cliente." };
+  }
+
   revalidatePath(`/clientes/${clientId}`);
   revalidatePath("/tareas");
+  return { error: null };
 }
 
 // ── Tareas ──────────────────────────────────────────────────────
@@ -353,17 +358,23 @@ export async function toggleTarea(
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("client_tasks")
     .update(
       completed
         ? { completed_at: new Date().toISOString(), completed_by: user.id }
         : { completed_at: null, completed_by: null },
     )
-    .eq("id", taskId);
+    .eq("id", taskId)
+    .eq("client_id", clientId);
+
+  if (error) {
+    return { error: "No se pudo actualizar la tarea." };
+  }
 
   revalidatePath("/tareas");
   revalidatePath(`/clientes/${clientId}`);
+  return { error: null };
 }
 
 export async function eliminarTarea(taskId: string, clientId: string) {
@@ -374,7 +385,17 @@ export async function eliminarTarea(taskId: string, clientId: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("client_tasks").delete().eq("id", taskId);
+  const { error } = await supabase
+    .from("client_tasks")
+    .delete()
+    .eq("id", taskId)
+    .eq("client_id", clientId);
+
+  if (error) {
+    return { error: "No se pudo eliminar la tarea." };
+  }
+
   revalidatePath("/tareas");
   revalidatePath(`/clientes/${clientId}`);
+  return { error: null };
 }

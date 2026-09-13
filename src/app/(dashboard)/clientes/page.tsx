@@ -3,6 +3,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
 import { canWrite, getCurrentRole } from "@/lib/roles";
+import { normalizeSearchTerm } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
 import Pagination, { PAGE_SIZE, parsePage } from "../components/Pagination";
 import ClientesFilter from "./ClientesFilter";
@@ -46,6 +47,7 @@ export default async function ClientesPage({ searchParams }: Props) {
   const escribir = canWrite(role);
 
   const { q, status, page: pageParam } = await searchParams;
+  const safeQuery = normalizeSearchTerm(q);
   const page = parsePage(pageParam);
 
   let query = supabase
@@ -61,13 +63,14 @@ export default async function ClientesPage({ searchParams }: Props) {
     query = query.eq("status", status);
   }
 
-  if (q) {
+  if (safeQuery) {
     query = query.or(
-      `display_name.ilike.%${q}%,legal_name.ilike.%${q}%,tax_id.ilike.%${q}%`,
+      `display_name.ilike.%${safeQuery}%,legal_name.ilike.%${safeQuery}%,tax_id.ilike.%${safeQuery}%,primary_email.ilike.%${safeQuery}%,primary_phone.ilike.%${safeQuery}%`,
     );
   }
 
-  const { data: clients, count } = await query;
+  const { data: clients, count, error } = await query;
+  if (error) throw new Error("No se pudieron cargar los clientes.");
 
   return (
     <>

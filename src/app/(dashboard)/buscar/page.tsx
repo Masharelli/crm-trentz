@@ -2,15 +2,19 @@ import {
   ClipboardList,
   Contact,
   FileText,
+  ListChecks,
+  MessageCircle,
+  NotebookText,
   Search,
   UsersRound,
   WalletCards,
 } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { normalizeSearchTerm } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
 
-// Busqueda global: clientes, contactos, pagos, documentos y formularios.
+// Busqueda global de la informacion operativa del CRM.
 
 type Props = {
   searchParams: Promise<{ q?: string }>;
@@ -95,6 +99,7 @@ export default async function BuscarPage({ searchParams }: Props) {
 
   const { q } = await searchParams;
   const query = (q ?? "").trim();
+  const normalizedQuery = normalizeSearchTerm(query);
 
   let clients: {
     id: string;
@@ -129,21 +134,42 @@ export default async function BuscarPage({ searchParams }: Props) {
     status: string;
     clients: { display_name: string } | null;
   }[] = [];
+  let tasks: {
+    id: string;
+    client_id: string;
+    name: string;
+    due_date: string | null;
+    clients: { display_name: string } | null;
+  }[] = [];
+  let notes: {
+    id: string;
+    client_id: string;
+    body: string;
+    clients: { display_name: string } | null;
+  }[] = [];
+  let conversations: {
+    id: string;
+    client_id: string | null;
+    profile_name: string | null;
+    phone_display: string;
+    last_message_preview: string | null;
+  }[] = [];
+  let searchError: string | null = null;
 
-  if (query.length >= 2) {
-    const like = `%${query}%`;
-    const [c, ct, p, d, fa] = await Promise.all([
+  if (query.length >= 2 && normalizedQuery.length >= 2) {
+    const like = `%${normalizedQuery}%`;
+    const [c, ct, p, d, fa, t, n, wa] = await Promise.all([
       supabase
         .from("clients")
         .select("id, display_name, legal_name, status")
         .or(
-          `display_name.ilike.${like},legal_name.ilike.${like},tax_id.ilike.${like},primary_email.ilike.${like}`,
+          `display_name.ilike.${like},legal_name.ilike.${like},tax_id.ilike.${like},primary_email.ilike.${like},primary_phone.ilike.${like}`,
         )
         .limit(10),
       supabase
         .from("client_contacts")
         .select("id, client_id, full_name, position, clients(display_name)")
-        .or(`full_name.ilike.${like},email.ilike.${like}`)
+        .or(`full_name.ilike.${like},email.ilike.${like},phone.ilike.${like}`)
         .limit(10),
       supabase
         .from("payments")
@@ -160,13 +186,40 @@ export default async function BuscarPage({ searchParams }: Props) {
         .select("id, form_name, status, clients(display_name)")
         .ilike("form_name", like)
         .limit(10),
+      supabase
+        .from("client_tasks")
+        .select("id, client_id, name, due_date, clients(display_name)")
+        .ilike("name", like)
+        .limit(10),
+      supabase
+        .from("notes")
+        .select("id, client_id, body, clients(display_name)")
+        .ilike("body", like)
+        .limit(10),
+      supabase
+        .from("whatsapp_conversations")
+        .select(
+          "id, client_id, profile_name, phone_display, last_message_preview",
+        )
+        .or(
+          `profile_name.ilike.${like},phone_display.ilike.${like},last_message_preview.ilike.${like}`,
+        )
+        .limit(10),
     ]);
+
+    if ([c, ct, p, d, fa, t, n, wa].some((result) => result.error)) {
+      searchError =
+        "No se pudieron consultar todos los resultados. Intenta nuevamente.";
+    }
 
     clients = (c.data ?? []) as typeof clients;
     contacts = (ct.data ?? []) as unknown as typeof contacts;
     payments = (p.data ?? []) as unknown as typeof payments;
     documents = (d.data ?? []) as unknown as typeof documents;
     assignments = (fa.data ?? []) as unknown as typeof assignments;
+    tasks = (t.data ?? []) as unknown as typeof tasks;
+    notes = (n.data ?? []) as unknown as typeof notes;
+    conversations = (wa.data ?? []) as typeof conversations;
   }
 
   const total =
@@ -174,7 +227,10 @@ export default async function BuscarPage({ searchParams }: Props) {
     contacts.length +
     payments.length +
     documents.length +
-    assignments.length;
+    assignments.length +
+    tasks.length +
+    notes.length +
+    conversations.length;
 
   return (
     <>
@@ -186,7 +242,7 @@ export default async function BuscarPage({ searchParams }: Props) {
           <p className="mt-1 text-sm text-zinc-500">
             {query.length >= 2
               ? `${total} resultados para "${query}"`
-              : "Busca en clientes, contactos, pagos, documentos y formularios"}
+              : "Busca clientes, tareas, mensajes, pagos y documentos"}
           </p>
         </div>
       </header>
@@ -201,13 +257,22 @@ export default async function BuscarPage({ searchParams }: Props) {
                 className="w-full bg-transparent text-zinc-900 outline-none placeholder:text-zinc-400"
                 defaultValue={query}
                 name="q"
-                placeholder="Buscar cliente, pago o documento"
+                placeholder="Buscar cliente, tarea, mensaje o pago"
                 type="search"
               />
             </label>
           </form>
 
-          {query.length >= 2 && total === 0 ? (
+          {searchError ? (
+            <div
+              className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm font-medium text-rose-800"
+              role="alert"
+            >
+              {searchError}
+            </div>
+          ) : null}
+
+          {query.length >= 2 && total === 0 && !searchError ? (
             <div className="flex flex-col items-center gap-3 rounded-xl border border-zinc-200 bg-white px-5 py-16 text-center shadow-sm">
               <div className="grid size-12 place-items-center rounded-full bg-zinc-100 text-zinc-400">
                 <Search size={22} />
@@ -233,6 +298,53 @@ export default async function BuscarPage({ searchParams }: Props) {
                 title={client.display_name}
                 subtitle={client.legal_name}
                 meta={clientStatusLabel[client.status] ?? client.status}
+              />
+            ))}
+          </SectionCard>
+
+          <SectionCard
+            icon={<ListChecks size={14} />}
+            title="Tareas"
+            count={tasks.length}
+          >
+            {tasks.map((task) => (
+              <ResultRow
+                key={task.id}
+                href={`/clientes/${task.client_id}`}
+                title={task.name}
+                subtitle={task.clients?.display_name}
+                meta={task.due_date ? `Vence ${task.due_date}` : null}
+              />
+            ))}
+          </SectionCard>
+
+          <SectionCard
+            icon={<MessageCircle size={14} />}
+            title="WhatsApp"
+            count={conversations.length}
+          >
+            {conversations.map((conversation) => (
+              <ResultRow
+                key={conversation.id}
+                href={`/whatsapp?c=${conversation.id}`}
+                title={conversation.profile_name || conversation.phone_display}
+                subtitle={conversation.last_message_preview}
+                meta={conversation.phone_display}
+              />
+            ))}
+          </SectionCard>
+
+          <SectionCard
+            icon={<NotebookText size={14} />}
+            title="Notas"
+            count={notes.length}
+          >
+            {notes.map((note) => (
+              <ResultRow
+                key={note.id}
+                href={`/clientes/${note.client_id}`}
+                title={note.body}
+                subtitle={note.clients?.display_name}
               />
             ))}
           </SectionCard>

@@ -137,46 +137,17 @@ export async function actualizarFormulario(id: string, formData: FormData) {
 
   const d = parsed.data;
 
-  const { error: formError } = await supabase
-    .from("forms")
-    .update({ name: d.name.trim(), description: nullify(d.description) })
-    .eq("id", id);
+  const { error: formError } = await supabase.rpc("update_form_with_fields", {
+    p_description: nullify(d.description),
+    p_fields: d.fields,
+    p_form_id: id,
+    p_name: d.name.trim(),
+  });
 
   if (formError) {
     redirect(
       `/formularios/${id}/editar?error=${encodeURIComponent(`No se pudo actualizar el formulario. (${formError.message})`)}`,
     );
-  }
-
-  // Borra las preguntas que ya no estan, actualiza las existentes e inserta
-  // las nuevas. Las asignaciones usan fields_snapshot, no se ven afectadas.
-  const keptIds = d.fields.filter((f) => f.id).map((f) => f.id as string);
-
-  let deleteQuery = supabase.from("form_fields").delete().eq("form_id", id);
-  if (keptIds.length > 0) {
-    deleteQuery = deleteQuery.not("id", "in", `(${keptIds.join(",")})`);
-  }
-  await deleteQuery;
-
-  for (const [index, field] of d.fields.entries()) {
-    const values = {
-      label: field.label.trim(),
-      help_text: nullify(field.help_text),
-      field_type: field.field_type,
-      options: field.options,
-      is_required: field.field_type === "section" ? false : field.is_required,
-      position: index,
-    };
-
-    if (field.id) {
-      await supabase
-        .from("form_fields")
-        .update(values)
-        .eq("id", field.id)
-        .eq("form_id", id);
-    } else {
-      await supabase.from("form_fields").insert({ form_id: id, ...values });
-    }
   }
 
   revalidatePath("/formularios");
@@ -194,7 +165,12 @@ export async function eliminarFormulario(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("forms").delete().eq("id", id);
+  const { error } = await supabase.from("forms").delete().eq("id", id);
+  if (error) {
+    redirect(
+      `/formularios?error=${encodeURIComponent("No se pudo eliminar el formulario. Verifica tus permisos.")}`,
+    );
+  }
   revalidatePath("/formularios");
   redirect(
     `/formularios?toast=${encodeURIComponent("Formulario eliminado correctamente")}`,
@@ -299,13 +275,13 @@ export async function enviarLigaFormulario(
 
   if (!user) redirect("/login");
 
-  const { data: assignment } = await supabase
+  const { data: assignment, error } = await supabase
     .from("form_assignments")
     .select("id, form_name, token, status, client_id, clients(display_name)")
     .eq("id", assignmentId)
     .maybeSingle();
 
-  if (!assignment) {
+  if (error || !assignment) {
     redirect(`${backPath}?error=${encodeURIComponent("La asignación no existe.")}`);
   }
 
@@ -357,12 +333,18 @@ export async function reabrirAsignacion(assignmentId: string, backPath: string) 
 
   if (!user) redirect("/login");
 
-  const { data: assignment } = await supabase
+  const { data: assignment, error } = await supabase
     .from("form_assignments")
     .update({ status: "in_progress", completed_at: null })
     .eq("id", assignmentId)
     .select("client_id, form_id")
     .maybeSingle();
+
+  if (error || !assignment) {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("No se pudo reabrir la asignacion.")}`,
+    );
+  }
 
   if (assignment) {
     revalidatePath(`/clientes/${assignment.client_id}`);
@@ -382,12 +364,18 @@ export async function eliminarAsignacion(assignmentId: string, backPath: string)
 
   if (!user) redirect("/login");
 
-  const { data: assignment } = await supabase
+  const { data: assignment, error } = await supabase
     .from("form_assignments")
     .delete()
     .eq("id", assignmentId)
     .select("client_id, form_id")
     .maybeSingle();
+
+  if (error || !assignment) {
+    redirect(
+      `${backPath}?error=${encodeURIComponent("No se pudo eliminar la asignacion.")}`,
+    );
+  }
 
   if (assignment) {
     revalidatePath(`/clientes/${assignment.client_id}`);

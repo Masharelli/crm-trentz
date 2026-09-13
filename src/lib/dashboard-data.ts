@@ -7,6 +7,7 @@ import {
   Mail,
   UserRoundCheck,
 } from "lucide-react";
+import { addDaysToDateKey, businessDateKey } from "@/lib/business-date";
 
 const paymentStatus = {
   canceled: {
@@ -72,6 +73,10 @@ type DashboardPayment = {
 };
 
 type DashboardClient = {
+  assignee?:
+    | { full_name?: string | null }
+    | { full_name?: string | null }[]
+    | null;
   display_name: string;
   id: string;
   status: keyof typeof clientStatus;
@@ -84,18 +89,19 @@ type DashboardDocument = {
   } | null;
   document_type: keyof typeof documentTypes;
   file_name: string;
+  file_path: string;
   id: string;
   status: keyof typeof documentStatus;
 };
 
-function getDateOnly(date: Date) {
-  return date.toISOString().slice(0, 10);
-}
+type OverduePaymentSummary = {
+  count: number | string;
+  total: number | string;
+};
 
-function addDays(date: Date, days: number) {
-  const nextDate = new Date(date);
-  nextDate.setDate(nextDate.getDate() + days);
-  return nextDate;
+function firstRelation<T>(value: T | T[] | null | undefined): T | null {
+  if (Array.isArray(value)) return value[0] ?? null;
+  return value ?? null;
 }
 
 function formatMoney(value: number | string, currency = "MXN") {
@@ -116,8 +122,8 @@ function formatDate(value: string) {
 }
 
 export async function getDashboardData(supabase: SupabaseClient) {
-  const today = getDateOnly(new Date());
-  const nextSevenDays = getDateOnly(addDays(new Date(), 7));
+  const today = businessDateKey();
+  const nextSevenDays = addDaysToDateKey(today, 7);
 
   const [
     activeClients,
@@ -140,13 +146,7 @@ export async function getDashboardData(supabase: SupabaseClient) {
       .lte("due_date", nextSevenDays)
       .eq("is_month_zero", false)
       .in("status", ["pending", "scheduled"]),
-    supabase
-      .from("payments")
-      .select("amount,currency", { count: "exact" })
-      .or(`status.eq.overdue,due_date.lt.${today}`)
-      .eq("is_month_zero", false)
-      .neq("status", "paid")
-      .neq("status", "canceled"),
+    supabase.rpc("get_overdue_payment_summary", { p_today: today }),
     supabase
       .from("documents")
       .select("id", { count: "exact", head: true }),
@@ -165,36 +165,73 @@ export async function getDashboardData(supabase: SupabaseClient) {
       .limit(4),
     supabase
       .from("clients")
-      .select("id, display_name, status, updated_at")
+      .select(
+        "id, display_name, status, updated_at, assignee:profiles!clients_assigned_to_fkey(full_name)",
+      )
       .order("updated_at", { ascending: false })
       .limit(3),
     supabase
       .from("documents")
-      .select("id, file_name, document_type, status, clients(display_name)")
+      .select(
+        "id, file_name, file_path, document_type, status, clients(display_name)",
+      )
       .order("created_at", { ascending: false })
       .limit(3),
   ]);
 
-  const overdueTotal = (overduePayments.data ?? []).reduce((sum, payment) => {
-    return sum + Number(payment.amount ?? 0);
-  }, 0);
+  const queryError = [
+    activeClients,
+    upcomingPaymentsCount,
+    overduePayments,
+    totalDocuments,
+    documentsToReview,
+    payments,
+    clients,
+    documents,
+  ].find((result) => result.error)?.error;
 
-  const overdueCount = overduePayments.count ?? 0;
+  if (queryError) {
+    throw new Error("No se pudo cargar el resumen del dashboard.");
+  }
+
+  const documentRows = (documents.data ?? []) as DashboardDocument[];
+  const signedDocumentUrls = new Map<string, string>();
+  if (documentRows.length > 0) {
+    const { data: signed } = await supabase.storage
+      .from("client-documents")
+      .createSignedUrls(
+        documentRows.map((document) => document.file_path),
+        3600,
+      );
+
+    for (const item of signed ?? []) {
+      if (item.path && item.signedUrl) {
+        signedDocumentUrls.set(item.path, item.signedUrl);
+      }
+    }
+  }
+
+  const overdueSummary = overduePayments.data as unknown as
+    | OverduePaymentSummary
+    | null;
+  const overdueTotal = Number(overdueSummary?.total ?? 0);
+  const overdueCount = Number(overdueSummary?.count ?? 0);
   const reviewCount = documentsToReview.count ?? 0;
   const upcomingCount = upcomingPaymentsCount.count ?? 0;
 
   return {
-    documentQueue: ((documents.data ?? []) as DashboardDocument[]).map(
-      (document) => ({
-        client: document.clients?.display_name ?? "Sin cliente",
-        file: document.file_name,
-        status: documentStatus[document.status] ?? "Subido",
-        type: documentTypes[document.document_type] ?? "Otro",
-      }),
-    ),
+    documentQueue: documentRows.map((document) => ({
+      client: document.clients?.display_name ?? "Sin cliente",
+      file: document.file_name,
+      id: document.id,
+      status: documentStatus[document.status] ?? "Subido",
+      type: documentTypes[document.document_type] ?? "Otro",
+      url: signedDocumentUrls.get(document.file_path) ?? null,
+    })),
     metrics: [
       {
         detail: "Registrados como activos",
+        href: "/clientes?status=active",
         icon: UserRoundCheck,
         label: "Clientes activos",
         tone: "text-emerald-700",
@@ -202,6 +239,7 @@ export async function getDashboardData(supabase: SupabaseClient) {
       },
       {
         detail: "Proximos 7 dias",
+        href: "/pagos",
         icon: Clock3,
         label: "Pagos por vencer",
         tone: "text-amber-700",
@@ -209,6 +247,7 @@ export async function getDashboardData(supabase: SupabaseClient) {
       },
       {
         detail: formatMoney(overdueTotal),
+        href: "/pagos?status=overdue",
         icon: AlertTriangle,
         label: "Pagos vencidos",
         tone: "text-rose-700",
@@ -216,31 +255,39 @@ export async function getDashboardData(supabase: SupabaseClient) {
       },
       {
         detail: `${reviewCount} pendientes de revisar`,
+        href: "/documentos",
         icon: FileText,
         label: "Documentos cargados",
         tone: "text-cyan-700",
         value: String(totalDocuments.count ?? 0),
       },
     ],
-    recentClients: ((clients.data ?? []) as DashboardClient[]).map((client) => ({
-      lastMove: `Actualizado el ${formatDate(client.updated_at.slice(0, 10))}`,
-      name: client.display_name,
-      owner: "Sin responsable",
-      stage: clientStatus[client.status] ?? "Prospecto",
-    })),
+    recentClients: ((clients.data ?? []) as unknown as DashboardClient[]).map(
+      (client) => ({
+        id: client.id,
+        lastMove: `Actualizado el ${formatDate(client.updated_at.slice(0, 10))}`,
+        name: client.display_name,
+        owner:
+          firstRelation(client.assignee)?.full_name ?? "Sin responsable",
+        stage: clientStatus[client.status] ?? "Prospecto",
+      }),
+    ),
     reminders: [
       {
         detail: `${upcomingCount} pagos cumplen ventana de 7 dias`,
+        href: "/pagos",
         icon: Mail,
         title: "Enviar avisos de pagos proximos",
       },
       {
         detail: `${overdueCount} pagos requieren seguimiento manual`,
+        href: "/pagos?status=overdue",
         icon: AlertTriangle,
         title: "Revisar pagos vencidos",
       },
       {
         detail: `${reviewCount} archivos aun no tienen estado final`,
+        href: "/documentos",
         icon: CheckCircle2,
         title: "Confirmar documentos",
       },
@@ -255,6 +302,7 @@ export async function getDashboardData(supabase: SupabaseClient) {
           client: payment.clients?.display_name ?? "Sin cliente",
           contact: payment.clients?.primary_email ?? "Sin contacto principal",
           dueDate: formatDate(payment.due_date),
+          id: payment.id,
           status: status.label,
           statusClass: status.statusClass,
         };

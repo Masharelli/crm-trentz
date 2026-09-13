@@ -1,6 +1,7 @@
 import { CalendarDays, ChevronLeft, ChevronRight } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { businessDateKey, getBusinessDateParts } from "@/lib/business-date";
 import { createClient } from "@/lib/supabase/server";
 
 type CalEvent = {
@@ -31,12 +32,12 @@ function addDays(d: Date, days: number) {
 }
 
 function parseMonth(value?: string): { year: number; month: number } {
-  const now = new Date();
   if (value && /^\d{4}-\d{2}$/.test(value)) {
     const [y, m] = value.split("-").map(Number);
     if (m >= 1 && m <= 12) return { year: y, month: m };
   }
-  return { year: now.getUTCFullYear(), month: now.getUTCMonth() + 1 };
+  const { month, year } = getBusinessDateParts();
+  return { year, month };
 }
 
 function monthParam(year: number, month: number) {
@@ -68,7 +69,7 @@ export default async function CalendarioPage({ searchParams }: Props) {
 
   const startKey = dateKey(gridStart);
   const endKey = dateKey(gridEnd);
-  const todayKey = dateKey(new Date());
+  const todayKey = businessDateKey();
 
   const [tasksRes, paymentsRes] = await Promise.all([
     supabase

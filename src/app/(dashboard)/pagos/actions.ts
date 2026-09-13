@@ -219,7 +219,12 @@ export async function eliminarPago(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("payments").delete().eq("id", id);
+  const { error } = await supabase.from("payments").delete().eq("id", id);
+  if (error) {
+    redirect(
+      `/pagos?error=${encodeURIComponent("No se pudo eliminar el pago. Verifica tus permisos e intenta de nuevo.")}`,
+    );
+  }
   revalidatePath("/pagos");
   revalidatePath("/");
   redirect(`/pagos?toast=${encodeURIComponent("Pago eliminado correctamente")}`);

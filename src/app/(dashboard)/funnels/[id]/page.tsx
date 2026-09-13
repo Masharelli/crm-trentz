@@ -20,6 +20,13 @@ type MemberRow = {
   } | null;
 };
 
+type StageRow = {
+  id: string;
+  name: string;
+  position: number;
+  task_flow: { name: string } | { name: string }[] | null;
+};
+
 export default async function FunnelPage({ params }: Props) {
   const supabase = await createClient();
   const {
@@ -42,7 +49,7 @@ export default async function FunnelPage({ params }: Props) {
     await Promise.all([
       supabase
         .from("funnel_stages")
-        .select("id, name, position")
+        .select("id, name, position, task_flow:task_flows(name)")
         .eq("funnel_id", id)
         .order("position", { ascending: true }),
       supabase
@@ -57,6 +64,17 @@ export default async function FunnelPage({ params }: Props) {
         .order("display_name", { ascending: true })
         .limit(500),
     ]);
+
+  const normalizedStages = ((stages ?? []) as unknown as StageRow[]).map(
+    (stage) => ({
+      id: stage.id,
+      name: stage.name,
+      position: stage.position,
+      taskFlowName: Array.isArray(stage.task_flow)
+        ? (stage.task_flow[0]?.name ?? null)
+        : (stage.task_flow?.name ?? null),
+    }),
+  );
 
   const members = ((memberRows ?? []) as unknown as MemberRow[])
     .filter((row) => row.clients !== null)
@@ -103,7 +121,7 @@ export default async function FunnelPage({ params }: Props) {
             </Link>
             <AgregarClientesButton
               funnelId={funnel.id}
-              stages={stages ?? []}
+              stages={normalizedStages}
               availableClients={availableClients}
             />
           </div>
@@ -113,7 +131,7 @@ export default async function FunnelPage({ params }: Props) {
       <div className="flex-1 overflow-y-auto px-4 py-6 sm:px-6 lg:px-8">
         <FunnelBoard
           funnelId={funnel.id}
-          stages={stages ?? []}
+          stages={normalizedStages}
           members={members}
         />
       </div>

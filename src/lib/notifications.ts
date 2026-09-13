@@ -1,4 +1,5 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
+import { addDaysToDateKey, businessDateKey } from "@/lib/business-date";
 
 // Centro de notificaciones: se derivan en vivo de los datos existentes
 // (tareas, pagos, formularios). No hay tabla propia ni estado "leido":
@@ -23,10 +24,6 @@ export type NotificationsResult = {
   count: number; // badge: solo items accionables (danger/warning)
 };
 
-function dateOnly(d: Date) {
-  return d.toISOString().slice(0, 10);
-}
-
 // Las uniones a-uno de Supabase pueden venir como objeto o arreglo segun
 // el inferidor de tipos; normalizamos para leer display_name/title.
 function readField(joined: unknown, field: string): string | null {
@@ -48,8 +45,8 @@ export async function getNotifications(
   supabase: SupabaseClient,
 ): Promise<NotificationsResult> {
   const now = new Date();
-  const today = dateOnly(now);
-  const inSevenDays = dateOnly(new Date(now.getTime() + 7 * 86400000));
+  const today = businessDateKey(now);
+  const inSevenDays = addDaysToDateKey(today, 7);
   const lastSevenDays = new Date(now.getTime() - 7 * 86400000).toISOString();
 
   const [overdueTasks, duePayments, recentForms, unreadChats] =
@@ -87,6 +84,17 @@ export async function getNotifications(
   ]);
 
   const items: AppNotification[] = [];
+
+  const queryError = [
+    overdueTasks,
+    duePayments,
+    recentForms,
+    unreadChats,
+  ].find((result) => result.error)?.error;
+
+  if (queryError) {
+    console.error("No se pudieron cargar todas las notificaciones:", queryError);
+  }
 
   for (const task of overdueTasks.data ?? []) {
     const cliente = readField(task.clients, "display_name") ?? "Cliente";

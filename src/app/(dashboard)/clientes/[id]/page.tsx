@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { businessDateKey } from "@/lib/business-date";
 import {
   answerableFields,
   assignmentStatusClass,
@@ -243,7 +244,7 @@ export default async function VerClientePage({ params, searchParams }: Props) {
   // Mismo orden que resolveClientEmail: contacto principal, luego ficha.
   const correoEnvio =
     contacts.find((c) => c.email)?.email ?? client.primary_email ?? null;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = businessDateKey();
 
   const formatDateTime = (value: string) =>
     new Intl.DateTimeFormat("es-MX", {

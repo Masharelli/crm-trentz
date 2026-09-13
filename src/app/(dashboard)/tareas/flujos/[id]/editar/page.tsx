@@ -30,7 +30,7 @@ export default async function EditarFlujoPage({ params, searchParams }: Props) {
 
   const { data: steps } = await supabase
     .from("task_flow_steps")
-    .select("id, name, position")
+    .select("id, name, position, due_days_after")
     .eq("flow_id", id)
     .order("position", { ascending: true });
 
@@ -66,7 +66,11 @@ export default async function EditarFlujoPage({ params, searchParams }: Props) {
             flowId={flow.id}
             flowName={flow.name}
             flowDescription={flow.description}
-            initialSteps={(steps ?? []).map((s) => ({ id: s.id, name: s.name }))}
+            initialSteps={(steps ?? []).map((step) => ({
+              id: step.id,
+              name: step.name,
+              due_days_after: step.due_days_after,
+            }))}
           />
         </div>
       </div>

@@ -1,6 +1,7 @@
 import { ListChecks, Plus, Workflow } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { businessDateKey } from "@/lib/business-date";
 import { canWrite, getCurrentRole } from "@/lib/roles";
 import { createClient } from "@/lib/supabase/server";
 import DeleteTareaButton from "./DeleteTareaButton";
@@ -48,7 +49,7 @@ export default async function TareasPage({ searchParams }: Props) {
   const escribir = canWrite(role);
 
   const { estado } = await searchParams;
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = businessDateKey();
 
   let query = supabase
     .from("client_tasks")
@@ -67,7 +68,8 @@ export default async function TareasPage({ searchParams }: Props) {
     query = query.not("completed_at", "is", null);
   }
 
-  const { data } = await query;
+  const { data, error } = await query;
+  if (error) throw new Error("No se pudieron cargar las tareas.");
   const tasks = (data ?? []) as unknown as TaskRow[];
 
   return (

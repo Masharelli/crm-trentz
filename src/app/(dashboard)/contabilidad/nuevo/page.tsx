@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { businessDateKey } from "@/lib/business-date";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "../../components/SubmitButton";
 import { crearGasto } from "../actions";
@@ -40,7 +41,7 @@ export default async function NuevoGastoPage({ searchParams }: Props) {
   if (!user) redirect("/login");
 
   const { error } = await searchParams;
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessDateKey();
 
   return (
     <>

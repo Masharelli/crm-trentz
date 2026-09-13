@@ -11,17 +11,45 @@ type Flow = {
   id: string;
   name: string;
   description: string | null;
-  task_flow_steps: { id: string; name: string; position: number }[];
+  task_flow_steps: {
+    id: string;
+    name: string;
+    position: number;
+    due_days_after: number | null;
+  }[];
 };
 
 type Props = {
+  baseDate: string;
   clientId: string;
   flows: Flow[];
 };
 
-export default function AsignarFlujoForm({ clientId, flows }: Props) {
+function dateAfter(baseDate: string, days: number): string {
+  const [year, month, day] = baseDate.split("-").map(Number);
+  const date = new Date(Date.UTC(year, month - 1, day + days));
+  return date.toISOString().slice(0, 10);
+}
+
+function defaultDueDates(
+  flow: Flow | undefined,
+  baseDate: string,
+): Record<string, string> {
+  return Object.fromEntries(
+    (flow?.task_flow_steps ?? [])
+      .filter((step) => step.due_days_after !== null)
+      .map((step) => [
+        step.id,
+        dateAfter(baseDate, step.due_days_after ?? 0),
+      ]),
+  );
+}
+
+export default function AsignarFlujoForm({ baseDate, clientId, flows }: Props) {
   const [flowId, setFlowId] = useState(flows[0]?.id ?? "");
-  const [dueDates, setDueDates] = useState<Record<string, string>>({});
+  const [dueDates, setDueDates] = useState<Record<string, string>>(() =>
+    defaultDueDates(flows[0], baseDate),
+  );
 
   const asignarConCliente = asignarFlujo.bind(null, clientId);
 
@@ -37,7 +65,12 @@ export default function AsignarFlujoForm({ clientId, flows }: Props) {
 
   function handleFlowChange(id: string) {
     setFlowId(id);
-    setDueDates({});
+    setDueDates(
+      defaultDueDates(
+        flows.find((flow) => flow.id === id),
+        baseDate,
+      ),
+    );
   }
 
   return (
@@ -81,8 +114,8 @@ export default function AsignarFlujoForm({ clientId, flows }: Props) {
       </div>
       <div className="space-y-3 px-6 py-6">
         <p className="text-sm text-zinc-500">
-          Cada paso se creara como una tarea para este cliente. Las fechas son
-          opcionales; lo vencido se marcara en rojo.
+          Cada paso se creara como una tarea. Las fechas propuestas usan los
+          plazos de la plantilla, pero puedes ajustarlas antes de asignar.
         </p>
 
         {(selectedFlow?.task_flow_steps ?? []).map((step, index) => (

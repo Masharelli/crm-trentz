@@ -82,7 +82,7 @@ export default async function NuevoDocumentoPage({ searchParams }: Props) {
                   type="file"
                 />
                 <p className="text-xs text-zinc-400">
-                  Formatos aceptados: PDF, PNG, JPG, DOCX, XLSX
+                  PDF, PNG, JPG, DOCX o XLSX. Maximo 20 MB.
                 </p>
               </div>
             </div>

@@ -6,6 +6,7 @@ import {
   WalletCards,
 } from "lucide-react";
 import type { Metadata } from "next";
+import { businessDateKey } from "@/lib/business-date";
 import { createAdminClient } from "@/lib/supabase/admin";
 
 // Portal publico del cliente: con la liga /p/<token> consulta sus pagos,
@@ -157,7 +158,7 @@ export default async function PortalClientePage({ params }: Props) {
     ]);
 
   const payments = (paymentsData ?? []) as PaymentRow[];
-  const hoy = new Date().toISOString().slice(0, 10);
+  const hoy = businessDateKey();
 
   const abiertos = payments.filter((p) =>
     ["pending", "scheduled", "month_zero", "overdue"].includes(p.status),

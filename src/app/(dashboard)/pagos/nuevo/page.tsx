@@ -1,6 +1,7 @@
 import { ArrowLeft } from "lucide-react";
 import Link from "next/link";
 import { redirect } from "next/navigation";
+import { addMonthsToDateKey, businessDateKey } from "@/lib/business-date";
 import { createClient } from "@/lib/supabase/server";
 import SubmitButton from "../../components/SubmitButton";
 import { crearPago } from "../actions";
@@ -47,10 +48,8 @@ export default async function NuevoPagoPage({ searchParams }: Props) {
     .in("status", ["prospect", "active", "paused"])
     .order("display_name", { ascending: true });
 
-  const today = new Date().toISOString().slice(0, 10);
-  const nextMonth = new Date();
-  nextMonth.setMonth(nextMonth.getMonth() + 1);
-  const nextMonthDate = nextMonth.toISOString().slice(0, 10);
+  const today = businessDateKey();
+  const nextMonthDate = addMonthsToDateKey(today, 1);
 
   return (
     <>

@@ -1,6 +1,6 @@
 "use client";
 
-import { LoaderCircle, Search, UserPlus, X } from "lucide-react";
+import { AlertCircle, LoaderCircle, Search, UserPlus, X } from "lucide-react";
 import { useState, useTransition } from "react";
 import { agregarClientesAFunnel } from "../actions";
 import { statusClass, statusLabel } from "../status";
@@ -32,6 +32,7 @@ export default function AgregarClientesButton({
   const [query, setQuery] = useState("");
   const [selected, setSelected] = useState<Set<string>>(new Set());
   const [stageId, setStageId] = useState(stages[0]?.id ?? "");
+  const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const filtered = availableClients.filter((client) =>
@@ -54,13 +55,20 @@ export default function AgregarClientesButton({
     setOpen(false);
     setQuery("");
     setSelected(new Set());
+    setError(null);
   }
 
   function handleAdd() {
     if (selected.size === 0 || !stageId) return;
 
     startTransition(async () => {
-      await agregarClientesAFunnel(funnelId, stageId, [...selected]);
+      const result = await agregarClientesAFunnel(funnelId, stageId, [
+        ...selected,
+      ]);
+      if (result.error) {
+        setError(result.error);
+        return;
+      }
       close();
     });
   }
@@ -106,6 +114,15 @@ export default function AgregarClientesButton({
             </div>
 
             <div className="space-y-3 border-b border-zinc-100 px-5 py-4">
+              {error ? (
+                <p
+                  role="alert"
+                  className="flex items-start gap-2 rounded-md border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700"
+                >
+                  <AlertCircle size={16} className="mt-0.5 shrink-0" />
+                  {error}
+                </p>
+              ) : null}
               <div className="relative">
                 <Search
                   size={15}

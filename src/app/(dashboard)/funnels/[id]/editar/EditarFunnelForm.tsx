@@ -1,6 +1,14 @@
 "use client";
 
-import { ArrowDown, ArrowUp, LoaderCircle, Plus, Trash2, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  LoaderCircle,
+  Plus,
+  Trash2,
+  Workflow,
+  X,
+} from "lucide-react";
 import Link from "next/link";
 import { useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
@@ -21,6 +29,7 @@ type StageItem = {
   id: string | null;
   name: string;
   clientCount: number;
+  taskFlowId: string | null;
 };
 
 type Removal = {
@@ -28,13 +37,20 @@ type Removal = {
   name: string;
   clientCount: number;
   targetKey: string | null;
+  taskFlowId: string | null;
 };
 
 type Props = {
   funnelId: string;
   funnelName: string;
   funnelDescription: string | null;
-  initialStages: { id: string; name: string; clientCount: number }[];
+  initialStages: {
+    id: string;
+    name: string;
+    clientCount: number;
+    taskFlowId: string | null;
+  }[];
+  taskFlows: { id: string; name: string }[];
 };
 
 function DeleteButton() {
@@ -61,6 +77,7 @@ export default function EditarFunnelForm({
   funnelName,
   funnelDescription,
   initialStages,
+  taskFlows,
 }: Props) {
   const [name, setName] = useState(funnelName);
   const [stages, setStages] = useState<StageItem[]>(
@@ -69,6 +86,7 @@ export default function EditarFunnelForm({
       id: stage.id,
       name: stage.name,
       clientCount: stage.clientCount,
+      taskFlowId: stage.taskFlowId,
     })),
   );
   const [removals, setRemovals] = useState<Removal[]>([]);
@@ -87,7 +105,12 @@ export default function EditarFunnelForm({
   const fallbackKey = cleanStages[0]?.key ?? null;
 
   const payload = {
-    stages: cleanStages.map((s) => ({ key: s.key, id: s.id, name: s.name })),
+    stages: cleanStages.map((stage) => ({
+      key: stage.key,
+      id: stage.id,
+      name: stage.name,
+      task_flow_id: stage.taskFlowId,
+    })),
     removals: removals.map((r) => ({
       id: r.id,
       targetKey:
@@ -105,11 +128,27 @@ export default function EditarFunnelForm({
     );
   }
 
+  function updateStageFlow(key: string, taskFlowId: string) {
+    setStages((prev) =>
+      prev.map((stage) =>
+        stage.key === key
+          ? { ...stage, taskFlowId: taskFlowId || null }
+          : stage,
+      ),
+    );
+  }
+
   function addStage() {
     nextKey.current += 1;
     setStages((prev) => [
       ...prev,
-      { key: `new-${nextKey.current}`, id: null, name: "", clientCount: 0 },
+      {
+        key: `new-${nextKey.current}`,
+        id: null,
+        name: "",
+        clientCount: 0,
+        taskFlowId: null,
+      },
     ]);
   }
 
@@ -134,6 +173,7 @@ export default function EditarFunnelForm({
           name: stage.name,
           clientCount: stage.clientCount,
           targetKey: null,
+          taskFlowId: stage.taskFlowId,
         },
       ]);
     }
@@ -148,6 +188,7 @@ export default function EditarFunnelForm({
         id: removal.id,
         name: removal.name,
         clientCount: removal.clientCount,
+        taskFlowId: removal.taskFlowId,
       },
     ]);
   }
@@ -240,8 +281,15 @@ export default function EditarFunnelForm({
           </p>
         </div>
         <div className="space-y-3 px-6 py-6">
+          <p className="text-sm text-zinc-500">
+            Puedes asociar un flujo de tareas a cada etapa. Se ejecutara una
+            sola vez cuando el cliente entre por primera vez.
+          </p>
           {stages.map((stage, index) => (
-            <div className="flex items-center gap-2" key={stage.key}>
+            <div
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-zinc-200 p-3 sm:grid-cols-[auto_minmax(0,1fr)_minmax(180px,0.7fr)_auto]"
+              key={stage.key}
+            >
               <span className="grid size-7 shrink-0 place-items-center rounded-md bg-zinc-100 text-xs font-semibold text-zinc-500">
                 {index + 1}
               </span>
@@ -257,13 +305,31 @@ export default function EditarFunnelForm({
                 type="text"
                 value={stage.name}
               />
+              <label className="col-start-2 flex h-11 min-w-0 items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-600 sm:col-start-auto">
+                <Workflow size={15} className="shrink-0 text-violet-500" />
+                <select
+                  aria-label={`Automatizacion de ${stage.name || `etapa ${index + 1}`}`}
+                  className="min-w-0 flex-1 bg-transparent text-sm text-zinc-800 outline-none"
+                  onChange={(event) =>
+                    updateStageFlow(stage.key, event.target.value)
+                  }
+                  value={stage.taskFlowId ?? ""}
+                >
+                  <option value="">Sin automatizacion</option>
+                  {taskFlows.map((flow) => (
+                    <option key={flow.id} value={flow.id}>
+                      {flow.name}
+                    </option>
+                  ))}
+                </select>
+              </label>
               {stage.clientCount > 0 ? (
-                <span className="shrink-0 text-xs font-medium text-zinc-400">
+                <span className="col-start-2 text-xs font-medium text-zinc-400 sm:col-start-3">
                   {stage.clientCount}{" "}
                   {stage.clientCount === 1 ? "cliente" : "clientes"}
                 </span>
               ) : null}
-              <div className="flex shrink-0 items-center gap-1">
+              <div className="col-start-2 flex shrink-0 items-center justify-end gap-1 sm:col-start-4 sm:row-start-1">
                 <button
                   aria-label="Subir etapa"
                   className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 disabled:opacity-30"

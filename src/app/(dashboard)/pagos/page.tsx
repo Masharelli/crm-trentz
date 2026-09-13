@@ -10,7 +10,9 @@ import {
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Suspense } from "react";
+import { addDaysToDateKey, businessDateKey } from "@/lib/business-date";
 import { canWrite, getCurrentRole } from "@/lib/roles";
+import { normalizeSearchTerm } from "@/lib/search";
 import { createClient } from "@/lib/supabase/server";
 import Pagination, { PAGE_SIZE, parsePage } from "../components/Pagination";
 import PagosFilter from "./PagosFilter";
@@ -54,62 +56,13 @@ type Props = {
   searchParams: Promise<{ q?: string; status?: string; page?: string }>;
 };
 
-type PaymentTotalsRow = {
-  status: string;
-  amount: number;
-  discount_pct: number;
-  due_date: string;
-  paid_at: string | null;
-  is_month_zero: boolean;
-  second_month_amount: number | null;
-  second_month_due_date: string | null;
+type PaymentTotals = {
+  cobrado_mes: number | string;
+  por_cobrar: number | string;
+  por_vencer: number | string;
+  vencido: number | string;
+  vencido_count: number | string;
 };
-
-// Monto real a cobrar: mes cero cobra el segundo mes; el resto aplica descuento.
-function netAmount(p: PaymentTotalsRow): number {
-  if (p.is_month_zero || p.status === "month_zero") {
-    return Number(p.second_month_amount ?? 0);
-  }
-  return Number(p.amount) * (1 - Number(p.discount_pct ?? 0) / 100);
-}
-
-function computeTotals(rows: PaymentTotalsRow[]) {
-  const hoy = new Date().toISOString().slice(0, 10);
-  const en7dias = new Date(Date.now() + 7 * 86400000).toISOString().slice(0, 10);
-  const mesActual = hoy.slice(0, 7);
-
-  let porCobrar = 0;
-  let vencido = 0;
-  let vencidoCount = 0;
-  let porVencer = 0;
-  let cobradoMes = 0;
-
-  for (const p of rows) {
-    const monto = netAmount(p);
-    const abierto = ["pending", "scheduled", "month_zero"].includes(p.status);
-    const fechaCobro =
-      p.is_month_zero || p.status === "month_zero"
-        ? (p.second_month_due_date ?? p.due_date)
-        : p.due_date;
-
-    if (p.status === "paid" && p.paid_at?.slice(0, 7) === mesActual) {
-      cobradoMes += monto;
-    }
-
-    if (p.status === "overdue" || (abierto && fechaCobro < hoy)) {
-      vencido += monto;
-      vencidoCount += 1;
-      porCobrar += monto;
-    } else if (abierto) {
-      porCobrar += monto;
-      if (fechaCobro >= hoy && fechaCobro <= en7dias) {
-        porVencer += monto;
-      }
-    }
-  }
-
-  return { porCobrar, vencido, vencidoCount, porVencer, cobradoMes };
-}
 
 export default async function PagosPage({ searchParams }: Props) {
   const supabase = await createClient();
@@ -123,6 +76,7 @@ export default async function PagosPage({ searchParams }: Props) {
   const escribir = canWrite(role);
 
   const { q, status, page: pageParam } = await searchParams;
+  const safeQuery = normalizeSearchTerm(q);
   const page = parsePage(pageParam);
 
   let query = supabase
@@ -138,34 +92,48 @@ export default async function PagosPage({ searchParams }: Props) {
     query = query.eq("status", status);
   }
 
-  if (q) {
-    const { data: matchingClients } = await supabase
+  if (safeQuery) {
+    const { data: matchingClients, error: clientsError } = await supabase
       .from("clients")
       .select("id")
-      .ilike("display_name", `%${q}%`);
+      .ilike("display_name", `%${safeQuery}%`);
+
+    if (clientsError) throw new Error("No se pudo realizar la busqueda de pagos.");
 
     const clientIds = (matchingClients ?? []).map((c) => c.id);
 
     if (clientIds.length > 0) {
       query = query.or(
-        `concept.ilike.%${q}%,client_id.in.(${clientIds.join(",")})`,
+        `concept.ilike.%${safeQuery}%,client_id.in.(${clientIds.join(",")})`,
       );
     } else {
-      query = query.ilike("concept", `%${q}%`);
+      query = query.ilike("concept", `%${safeQuery}%`);
     }
   }
 
-  const [{ data: payments, count }, { data: totalsData }] = await Promise.all([
-    query,
-    supabase
-      .from("payments")
-      .select(
-        "status, amount, discount_pct, due_date, paid_at, is_month_zero, second_month_amount, second_month_due_date",
-      )
-      .neq("status", "canceled"),
-  ]);
+  const today = businessDateKey();
+  const [{ data: payments, count, error: paymentsError }, totalsResult] =
+    await Promise.all([
+      query,
+      supabase.rpc("get_payment_totals", {
+        p_current_month: today.slice(0, 7),
+        p_in_seven_days: addDaysToDateKey(today, 7),
+        p_today: today,
+      }),
+    ]);
 
-  const totals = computeTotals((totalsData ?? []) as PaymentTotalsRow[]);
+  if (paymentsError || totalsResult.error || !totalsResult.data) {
+    throw new Error("No se pudieron cargar los pagos.");
+  }
+
+  const totalsData = totalsResult.data as unknown as PaymentTotals;
+  const totals = {
+    cobradoMes: Number(totalsData.cobrado_mes ?? 0),
+    porCobrar: Number(totalsData.por_cobrar ?? 0),
+    porVencer: Number(totalsData.por_vencer ?? 0),
+    vencido: Number(totalsData.vencido ?? 0),
+    vencidoCount: Number(totalsData.vencido_count ?? 0),
+  };
 
   return (
     <>

@@ -138,7 +138,25 @@ export async function cambiarEstadoCliente(id: string, status: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("clients").update({ status }).eq("id", id);
+  const validStatus = z
+    .enum(["prospect", "active", "paused", "closed"])
+    .safeParse(status);
+  if (!validStatus.success) {
+    redirect(
+      `/clientes/${id}?error=${encodeURIComponent("El estado seleccionado no es valido.")}`,
+    );
+  }
+
+  const { error } = await supabase
+    .from("clients")
+    .update({ status: validStatus.data })
+    .eq("id", id);
+
+  if (error) {
+    redirect(
+      `/clientes/${id}?error=${encodeURIComponent("No se pudo cambiar el estado del cliente.")}`,
+    );
+  }
 
   const statusLabel: Record<string, string> = {
     active: "Activo",
@@ -286,11 +304,17 @@ export async function eliminarContacto(clientId: string, contactId: string) {
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("client_contacts")
     .delete()
     .eq("id", contactId)
     .eq("client_id", clientId);
+
+  if (error) {
+    redirect(
+      `/clientes/${clientId}?error=${encodeURIComponent("No se pudo eliminar el contacto.")}`,
+    );
+  }
 
   revalidatePath(`/clientes/${clientId}`);
 }
@@ -463,7 +487,17 @@ export async function eliminarNota(clientId: string, noteId: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("notes").delete().eq("id", noteId);
+  const { error } = await supabase
+    .from("notes")
+    .delete()
+    .eq("id", noteId)
+    .eq("client_id", clientId);
+
+  if (error) {
+    redirect(
+      `/clientes/${clientId}?error=${encodeURIComponent("No se pudo eliminar la nota.")}`,
+    );
+  }
   revalidatePath(`/clientes/${clientId}`);
 }
 
@@ -475,7 +509,40 @@ export async function eliminarCliente(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("clients").delete().eq("id", id);
+  const { data: documents, error: documentsError } = await supabase
+    .from("documents")
+    .select("file_path")
+    .eq("client_id", id);
+
+  if (documentsError) {
+    redirect(
+      `/clientes/${id}/editar?error=${encodeURIComponent("No se pudieron verificar los documentos del cliente.")}`,
+    );
+  }
+
+  const { error } = await supabase.from("clients").delete().eq("id", id);
+  if (error) {
+    redirect(
+      `/clientes/${id}/editar?error=${encodeURIComponent("No se pudo eliminar el cliente. Verifica tus permisos e intenta de nuevo.")}`,
+    );
+  }
+
+  const paths = (documents ?? [])
+    .map((document) => document.file_path)
+    .filter((path): path is string => Boolean(path));
+
+  if (paths.length > 0) {
+    const { error: storageError } = await supabase.storage
+      .from("client-documents")
+      .remove(paths);
+
+    if (storageError) {
+      revalidatePath("/clientes");
+      redirect(
+        `/clientes?error=${encodeURIComponent("El cliente se elimino, pero algunos archivos no pudieron limpiarse del almacenamiento.")}`,
+      );
+    }
+  }
   revalidatePath("/clientes");
   redirect(`/clientes?toast=${encodeURIComponent("Cliente eliminado correctamente")}`);
 }

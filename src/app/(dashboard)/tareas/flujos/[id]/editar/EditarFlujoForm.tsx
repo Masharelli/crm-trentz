@@ -20,13 +20,14 @@ type StepItem = {
   key: string;
   id: string | null;
   name: string;
+  dueDays: string;
 };
 
 type Props = {
   flowId: string;
   flowName: string;
   flowDescription: string | null;
-  initialSteps: { id: string; name: string }[];
+  initialSteps: { id: string; name: string; due_days_after: number | null }[];
 };
 
 function DeleteButton() {
@@ -56,7 +57,13 @@ export default function EditarFlujoForm({
 }: Props) {
   const [name, setName] = useState(flowName);
   const [steps, setSteps] = useState<StepItem[]>(
-    initialSteps.map((step) => ({ key: step.id, id: step.id, name: step.name })),
+    initialSteps.map((step) => ({
+      key: step.id,
+      id: step.id,
+      name: step.name,
+      dueDays:
+        step.due_days_after === null ? "" : String(step.due_days_after),
+    })),
   );
   const [errors, setErrors] = useState<{ name?: string; steps?: string }>({});
   const nextKey = useRef(0);
@@ -69,12 +76,19 @@ export default function EditarFlujoForm({
     .filter((s) => s.name !== "");
 
   const payload = {
-    steps: cleanSteps.map((s) => ({ id: s.id, name: s.name })),
+    steps: cleanSteps.map((step) => ({
+      id: step.id,
+      name: step.name,
+      due_days_after:
+        step.dueDays === "" ? null : Math.max(0, Number(step.dueDays)),
+    })),
   };
 
-  function updateStep(key: string, value: string) {
+  function updateStep(key: string, updates: Partial<StepItem>) {
     setSteps((prev) =>
-      prev.map((s) => (s.key === key ? { ...s, name: value } : s)),
+      prev.map((step) =>
+        step.key === key ? { ...step, ...updates } : step,
+      ),
     );
   }
 
@@ -82,7 +96,7 @@ export default function EditarFlujoForm({
     nextKey.current += 1;
     setSteps((prev) => [
       ...prev,
-      { key: `new-${nextKey.current}`, id: null, name: "" },
+      { key: `new-${nextKey.current}`, id: null, name: "", dueDays: "" },
     ]);
   }
 
@@ -186,18 +200,22 @@ export default function EditarFlujoForm({
         <div className="space-y-3 px-6 py-6">
           <p className="text-sm text-zinc-500">
             Los cambios solo afectan asignaciones futuras; las tareas ya
-            asignadas a clientes no se modifican.
+            asignadas no se modifican. El plazo se cuenta desde el dia en que
+            se asigne el flujo.
           </p>
 
           {steps.map((step, index) => (
-            <div className="flex items-center gap-2" key={step.key}>
+            <div
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-2 rounded-lg border border-zinc-200 p-3 sm:grid-cols-[auto_minmax(0,1fr)_auto_auto]"
+              key={step.key}
+            >
               <span className="grid size-7 shrink-0 place-items-center rounded-md bg-zinc-100 text-xs font-semibold text-zinc-500">
                 {index + 1}
               </span>
               <input
                 className={`${inputClass} ${inputOk}`}
                 onChange={(e) => {
-                  updateStep(step.key, e.target.value);
+                  updateStep(step.key, { name: e.target.value });
                   if (errors.steps) {
                     setErrors((prev) => ({ ...prev, steps: undefined }));
                   }
@@ -206,7 +224,23 @@ export default function EditarFlujoForm({
                 type="text"
                 value={step.name}
               />
-              <div className="flex shrink-0 items-center gap-1">
+              <label className="col-start-2 flex h-11 shrink-0 items-center gap-2 rounded-md border border-zinc-200 bg-zinc-50 px-3 text-sm text-zinc-600 sm:col-start-auto">
+                <span className="whitespace-nowrap">Vence en</span>
+                <input
+                  aria-label={`Dias para vencer el paso ${index + 1}`}
+                  className="w-16 bg-transparent text-right font-medium text-zinc-950 outline-none"
+                  max={3650}
+                  min={0}
+                  onChange={(e) =>
+                    updateStep(step.key, { dueDays: e.target.value })
+                  }
+                  placeholder="—"
+                  type="number"
+                  value={step.dueDays}
+                />
+                <span>dias</span>
+              </label>
+              <div className="col-start-2 flex shrink-0 items-center justify-end gap-1 sm:col-start-auto">
                 <button
                   aria-label="Subir paso"
                   className="grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-zinc-100 hover:text-zinc-950 disabled:opacity-30"

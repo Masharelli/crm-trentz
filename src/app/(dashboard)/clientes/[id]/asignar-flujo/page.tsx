@@ -1,6 +1,7 @@
 import { ArrowLeft, Plus, Workflow } from "lucide-react";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
+import { businessDateKey } from "@/lib/business-date";
 import { createClient } from "@/lib/supabase/server";
 import AsignarFlujoForm from "./AsignarFlujoForm";
 
@@ -13,7 +14,12 @@ type FlowRow = {
   id: string;
   name: string;
   description: string | null;
-  task_flow_steps: { id: string; name: string; position: number }[];
+  task_flow_steps: {
+    id: string;
+    name: string;
+    position: number;
+    due_days_after: number | null;
+  }[];
 };
 
 export default async function AsignarFlujoPage({ params, searchParams }: Props) {
@@ -37,7 +43,9 @@ export default async function AsignarFlujoPage({ params, searchParams }: Props) 
 
   const { data } = await supabase
     .from("task_flows")
-    .select("id, name, description, task_flow_steps(id, name, position)")
+    .select(
+      "id, name, description, task_flow_steps(id, name, position, due_days_after)",
+    )
     .order("name", { ascending: true });
 
   const flows = ((data ?? []) as unknown as FlowRow[]).map((flow) => ({
@@ -46,6 +54,7 @@ export default async function AsignarFlujoPage({ params, searchParams }: Props) 
       (a, b) => a.position - b.position,
     ),
   }));
+  const today = businessDateKey();
 
   return (
     <>
@@ -76,7 +85,11 @@ export default async function AsignarFlujoPage({ params, searchParams }: Props) 
           ) : null}
 
           {flows.length > 0 ? (
-            <AsignarFlujoForm clientId={client.id} flows={flows} />
+            <AsignarFlujoForm
+              baseDate={today}
+              clientId={client.id}
+              flows={flows}
+            />
           ) : (
             <div className="rounded-xl border border-zinc-200 bg-white shadow-sm">
               <div className="flex flex-col items-center gap-3 px-5 py-16 text-center">

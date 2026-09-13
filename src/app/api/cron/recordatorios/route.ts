@@ -1,13 +1,22 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@supabase/supabase-js";
+import { addDaysToDateKey, businessDateKey } from "@/lib/business-date";
 import { resend, FROM_EMAIL } from "@/lib/resend";
 
 export const dynamic = "force-dynamic";
 
-function addDays(dateStr: string, days: number): string {
-  const d = new Date(dateStr + "T12:00:00Z");
-  d.setUTCDate(d.getUTCDate() + days);
-  return d.toISOString().split("T")[0];
+function escapeHtml(value: string): string {
+  return value.replace(
+    /[&<>"']/g,
+    (character) =>
+      ({
+        "&": "&amp;",
+        '"': "&quot;",
+        "'": "&#039;",
+        "<": "&lt;",
+        ">": "&gt;",
+      })[character] ?? character,
+  );
 }
 
 function buildHtml(
@@ -47,11 +56,11 @@ function buildHtml(
       <table style="width:100%;border-collapse:collapse;background:#f4f4f5;border-radius:8px;overflow:hidden;">
         <tr>
           <td style="padding:16px 20px;font-size:13px;color:#71717a;width:40%;">Cliente</td>
-          <td style="padding:16px 20px;font-size:14px;font-weight:500;color:#09090b;">${clientName}</td>
+          <td style="padding:16px 20px;font-size:14px;font-weight:500;color:#09090b;">${escapeHtml(clientName)}</td>
         </tr>
         <tr style="border-top:1px solid #e4e4e7;">
           <td style="padding:16px 20px;font-size:13px;color:#71717a;">Concepto</td>
-          <td style="padding:16px 20px;font-size:14px;font-weight:500;color:#09090b;">${concept}</td>
+          <td style="padding:16px 20px;font-size:14px;font-weight:500;color:#09090b;">${escapeHtml(concept)}</td>
         </tr>
         <tr style="border-top:1px solid #e4e4e7;">
           <td style="padding:16px 20px;font-size:13px;color:#71717a;">Monto</td>
@@ -68,18 +77,28 @@ function buildHtml(
 }
 
 export async function GET(request: NextRequest) {
+  const cronSecret = process.env.CRON_SECRET;
+  if (!cronSecret) {
+    console.error("[cron/recordatorios] falta CRON_SECRET");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 503 });
+  }
+
   const authHeader = request.headers.get("authorization");
-  if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {
+  if (authHeader !== `Bearer ${cronSecret}`) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const supabase = createClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.SUPABASE_SERVICE_ROLE_KEY!,
-  );
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  if (!supabaseUrl || !serviceRoleKey) {
+    console.error("[cron/recordatorios] faltan credenciales de Supabase");
+    return NextResponse.json({ error: "Server misconfigured" }, { status: 503 });
+  }
 
-  const today = new Date().toISOString().split("T")[0];
-  const maxFuture = addDays(today, 90);
+  const supabase = createClient(supabaseUrl, serviceRoleKey);
+
+  const today = businessDateKey();
+  const maxFuture = addDaysToDateKey(today, 90);
 
   const { data: payments, error: fetchError } = await supabase
     .from("payments")
@@ -101,7 +120,7 @@ export async function GET(request: NextRequest) {
   const results = { sent: 0, skipped: 0, errors: 0 };
 
   for (const payment of payments ?? []) {
-    const targetDate = addDays(today, payment.reminder_days_before);
+    const targetDate = addDaysToDateKey(today, payment.reminder_days_before);
     if (payment.due_date !== targetDate) continue;
 
     if (payment.last_reminder_sent_at) {
@@ -140,7 +159,7 @@ export async function GET(request: NextRequest) {
       continue;
     }
 
-    await Promise.all([
+    const [paymentUpdate, notificationInsert] = await Promise.all([
       supabase
         .from("payments")
         .update({ last_reminder_sent_at: new Date().toISOString() })
@@ -154,6 +173,14 @@ export async function GET(request: NextRequest) {
         sent_at: new Date().toISOString(),
       }),
     ]);
+
+    if (paymentUpdate.error || notificationInsert.error) {
+      console.error(
+        `[cron/recordatorios] persistence error for payment ${payment.id}:`,
+        paymentUpdate.error ?? notificationInsert.error,
+      );
+      results.errors++;
+    }
 
     results.sent++;
   }

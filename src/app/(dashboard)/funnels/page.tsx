@@ -24,11 +24,13 @@ export default async function FunnelsPage() {
   const role = await getCurrentRole(supabase, user.id);
   const escribir = canWrite(role);
 
-  const { data: funnels } = await supabase
+  const { data: funnels, error } = await supabase
     .from("funnels")
     .select("id, name, description, updated_at, funnel_stages(count), funnel_clients(count)")
     .order("updated_at", { ascending: false })
     .limit(100);
+
+  if (error) throw new Error("No se pudieron cargar los funnels.");
 
   return (
     <>

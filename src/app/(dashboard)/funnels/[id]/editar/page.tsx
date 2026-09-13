@@ -28,16 +28,23 @@ export default async function EditarFunnelPage({ params, searchParams }: Props) 
 
   if (!funnel) notFound();
 
-  const { data: stages } = await supabase
-    .from("funnel_stages")
-    .select("id, name, position, funnel_clients(count)")
-    .eq("funnel_id", id)
-    .order("position", { ascending: true });
+  const [{ data: stages }, { data: taskFlows }] = await Promise.all([
+    supabase
+      .from("funnel_stages")
+      .select("id, name, position, task_flow_id, funnel_clients(count)")
+      .eq("funnel_id", id)
+      .order("position", { ascending: true }),
+    supabase
+      .from("task_flows")
+      .select("id, name")
+      .order("name", { ascending: true }),
+  ]);
 
   const initialStages = (stages ?? []).map((stage) => ({
     id: stage.id,
     name: stage.name,
     clientCount: stage.funnel_clients?.[0]?.count ?? 0,
+    taskFlowId: stage.task_flow_id,
   }));
 
   return (
@@ -73,6 +80,7 @@ export default async function EditarFunnelPage({ params, searchParams }: Props) 
             funnelName={funnel.name}
             funnelDescription={funnel.description}
             initialStages={initialStages}
+            taskFlows={taskFlows ?? []}
           />
         </div>
       </div>

@@ -76,17 +76,21 @@ export default async function DocumentosPage({ searchParams }: Props) {
     query = query.eq("client_id", client_id);
   }
 
-  const { data: documents, count } = await query;
+  const { data: documents, count, error } = await query;
+  if (error) throw new Error("No se pudieron cargar los documentos.");
   const docs = documents ?? [];
 
   const signedUrls: Record<string, string> = {};
   if (docs.length > 0) {
-    const { data: urls } = await supabase.storage
+    const { data: urls, error: urlsError } = await supabase.storage
       .from("client-documents")
       .createSignedUrls(
         docs.map((d) => d.file_path),
         3600,
       );
+    if (urlsError) {
+      throw new Error("No se pudieron preparar los documentos para descarga.");
+    }
     if (urls) {
       for (const u of urls) {
         if (u.signedUrl && u.path) signedUrls[u.path] = u.signedUrl;
@@ -194,7 +198,6 @@ export default async function DocumentosPage({ searchParams }: Props) {
                             {escribir ? (
                               <DeleteDocumentoButton
                                 id={doc.id}
-                                filePath={doc.file_path}
                                 nombre={doc.file_name}
                               />
                             ) : null}

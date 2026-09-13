@@ -6,11 +6,10 @@ import { eliminarDocumento } from "./actions";
 
 type Props = {
   id: string;
-  filePath: string;
   nombre: string;
 };
 
-export default function DeleteDocumentoButton({ id, filePath, nombre }: Props) {
+export default function DeleteDocumentoButton({ id, nombre }: Props) {
   const [isPending, startTransition] = useTransition();
 
   function handleDelete() {
@@ -22,7 +21,7 @@ export default function DeleteDocumentoButton({ id, filePath, nombre }: Props) {
       return;
 
     startTransition(async () => {
-      await eliminarDocumento(id, filePath);
+      await eliminarDocumento(id);
     });
   }
 
@@ -32,7 +31,7 @@ export default function DeleteDocumentoButton({ id, filePath, nombre }: Props) {
       onClick={handleDelete}
       type="button"
       aria-label={`Eliminar ${nombre}`}
-      className="grid size-8 place-items-center rounded-md text-zinc-500 transition hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
+      className="pressable grid size-8 place-items-center rounded-md text-zinc-500 hover:bg-rose-50 hover:text-rose-600 disabled:opacity-40"
     >
       {isPending ? (
         <LoaderCircle className="animate-spin" size={15} />

@@ -20,6 +20,7 @@ const actualizarSchema = z.object({
         key: z.string(),
         id: z.string().uuid().nullable(),
         name: z.string().min(1, "Las etapas no pueden estar vacias."),
+        task_flow_id: z.string().uuid().nullable(),
       }),
     )
     .min(1, "El funnel debe tener al menos una etapa."),
@@ -134,59 +135,21 @@ export async function actualizarFunnel(id: string, formData: FormData) {
 
   const d = parsed.data;
 
-  const { error: funnelError } = await supabase
-    .from("funnels")
-    .update({
-      name,
-      description: nullify(description),
-    })
-    .eq("id", id);
+  const { error: funnelError } = await supabase.rpc(
+    "update_funnel_with_stages",
+    {
+      p_description: nullify(description),
+      p_funnel_id: id,
+      p_name: name,
+      p_removals: d.removals,
+      p_stages: d.stages,
+    },
+  );
 
   if (funnelError) {
     redirect(
       `/funnels/${id}/editar?error=${encodeURIComponent(`No se pudo actualizar el funnel. (${funnelError.message})`)}`,
     );
-  }
-
-  // Inserta etapas nuevas y actualiza nombre/posicion de las existentes.
-  const idsByKey = new Map<string, string>();
-
-  for (const [index, stage] of d.stages.entries()) {
-    if (stage.id) {
-      idsByKey.set(stage.key, stage.id);
-      await supabase
-        .from("funnel_stages")
-        .update({ name: stage.name.trim(), position: index })
-        .eq("id", stage.id)
-        .eq("funnel_id", id);
-    } else {
-      const { data: created } = await supabase
-        .from("funnel_stages")
-        .insert({ funnel_id: id, name: stage.name.trim(), position: index })
-        .select("id")
-        .single();
-      if (created) idsByKey.set(stage.key, created.id);
-    }
-  }
-
-  // Reubica clientes de etapas eliminadas y borra esas etapas.
-  for (const removal of d.removals) {
-    const targetId = removal.targetKey ? idsByKey.get(removal.targetKey) : null;
-
-    if (targetId) {
-      await supabase
-        .from("funnel_clients")
-        .update({ stage_id: targetId })
-        .eq("stage_id", removal.id);
-    } else {
-      await supabase.from("funnel_clients").delete().eq("stage_id", removal.id);
-    }
-
-    await supabase
-      .from("funnel_stages")
-      .delete()
-      .eq("id", removal.id)
-      .eq("funnel_id", id);
   }
 
   revalidatePath("/funnels");
@@ -204,7 +167,12 @@ export async function eliminarFunnel(id: string) {
 
   if (!user) redirect("/login");
 
-  await supabase.from("funnels").delete().eq("id", id);
+  const { error } = await supabase.from("funnels").delete().eq("id", id);
+  if (error) {
+    redirect(
+      `/funnels?error=${encodeURIComponent("No se pudo eliminar el funnel. Verifica tus permisos e intenta de nuevo.")}`,
+    );
+  }
   revalidatePath("/funnels");
   redirect(
     `/funnels?toast=${encodeURIComponent("Funnel eliminado correctamente")}`,
@@ -223,9 +191,9 @@ export async function agregarClientesAFunnel(
 
   if (!user) redirect("/login");
 
-  if (clientIds.length === 0) return;
+  if (clientIds.length === 0) return { error: null };
 
-  await supabase.from("funnel_clients").upsert(
+  const { error } = await supabase.from("funnel_clients").upsert(
     clientIds.map((clientId) => ({
       funnel_id: funnelId,
       stage_id: stageId,
@@ -235,7 +203,12 @@ export async function agregarClientesAFunnel(
     { ignoreDuplicates: true, onConflict: "funnel_id,client_id" },
   );
 
+  if (error) {
+    return { error: "No se pudieron agregar los clientes al funnel." };
+  }
+
   revalidatePath(`/funnels/${funnelId}`);
+  return { error: null };
 }
 
 export async function moverClienteDeEtapa(
@@ -250,13 +223,18 @@ export async function moverClienteDeEtapa(
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("funnel_clients")
     .update({ stage_id: stageId })
     .eq("id", funnelClientId)
     .eq("funnel_id", funnelId);
 
+  if (error) {
+    return { error: "No se pudo mover el cliente. Intenta nuevamente." };
+  }
+
   revalidatePath(`/funnels/${funnelId}`);
+  return { error: null };
 }
 
 export async function quitarClienteDeFunnel(
@@ -270,11 +248,16 @@ export async function quitarClienteDeFunnel(
 
   if (!user) redirect("/login");
 
-  await supabase
+  const { error } = await supabase
     .from("funnel_clients")
     .delete()
     .eq("id", funnelClientId)
     .eq("funnel_id", funnelId);
 
+  if (error) {
+    return { error: "No se pudo quitar el cliente del funnel." };
+  }
+
   revalidatePath(`/funnels/${funnelId}`);
+  return { error: null };
 }
