@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { after } from "next/server";
 import { z } from "zod";
 import { logActivity } from "@/lib/activity";
 import { canWrite, getCurrentRole } from "@/lib/roles";
@@ -26,13 +27,7 @@ const mensajeSchema = z.object({
 });
 
 async function requireWriter() {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  if (!user) redirect("/login");
-
+  const { supabase, user } = await requireUser();
   const role = await getCurrentRole(supabase, user.id);
   if (!canWrite(role)) {
     redirect(
@@ -43,27 +38,53 @@ async function requireWriter() {
   return { supabase, user };
 }
 
-export async function enviarMensaje(formData: FormData) {
-  const { supabase, user } = await requireWriter();
+async function requireUser() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
+  if (!user) redirect("/login");
+
+  return { supabase, user };
+}
+
+export type SendTextResult =
+  | { ok: true; messageId: string }
+  | { ok: false; error: string; messageId?: string; sent?: boolean };
+
+export async function enviarMensaje(formData: FormData): Promise<SendTextResult> {
   const parsed = mensajeSchema.safeParse(Object.fromEntries(formData));
 
   if (!parsed.success) {
-    const message = parsed.error.issues[0]?.message ?? "Datos invalidos.";
-    redirect(`/whatsapp?error=${encodeURIComponent(message)}`);
+    return {
+      ok: false,
+      error: parsed.error.issues[0]?.message ?? "Datos invalidos.",
+    };
   }
 
   const d = parsed.data;
-  const back = `/whatsapp?c=${d.conversation_id}`;
+  const { supabase, user } = await requireUser();
+  const [role, conversationResult] = await Promise.all([
+    getCurrentRole(supabase, user.id),
+    supabase
+      .from("whatsapp_conversations")
+      .select("id, wa_id, client_id, last_inbound_at")
+      .eq("id", d.conversation_id)
+      .maybeSingle(),
+  ]);
 
-  const { data: conversation } = await supabase
-    .from("whatsapp_conversations")
-    .select("id, wa_id, client_id, last_inbound_at")
-    .eq("id", d.conversation_id)
-    .maybeSingle();
+  if (!canWrite(role)) {
+    return {
+      ok: false,
+      error: "Tu cuenta es de solo lectura y no puede realizar esta accion.",
+    };
+  }
+
+  const conversation = conversationResult.data;
 
   if (!conversation) {
-    redirect(`/whatsapp?error=${encodeURIComponent("Conversacion no encontrada.")}`);
+    return { ok: false, error: "Conversacion no encontrada." };
   }
 
   // Regla de Meta: mensajes libres solo dentro de las 24h posteriores al
@@ -73,11 +94,10 @@ export async function enviarMensaje(formData: FormData) {
     Date.now() - new Date(conversation.last_inbound_at).getTime() < WINDOW_MS;
 
   if (!windowOpen) {
-    redirect(
-      `${back}&error=${encodeURIComponent(
-        "La ventana de 24 horas expiro. El cliente debe escribir primero.",
-      )}`,
-    );
+    return {
+      ok: false,
+      error: "La ventana de 24 horas expiro. El cliente debe escribir primero.",
+    };
   }
 
   const body = d.body;
@@ -103,57 +123,85 @@ export async function enviarMensaje(formData: FormData) {
     .single();
 
   if (insertError || !pendingMessage) {
-    redirect(
-      `${back}&error=${encodeURIComponent("No se pudo preparar el mensaje. No fue enviado.")}`,
-    );
+    return {
+      ok: false,
+      error: "No se pudo preparar el mensaje. No fue enviado.",
+    };
   }
 
   const result = await sendTextMessage(conversation.wa_id, body);
 
-  const { error: updateMessageError } = await supabase
-    .from("whatsapp_messages")
-    .update({
-      wamid: result.wamid ?? null,
-      status: result.error ? "failed" : "sent",
-      error_message: result.error ?? null,
-    })
-    .eq("id", pendingMessage.id);
+  const [messageUpdate, conversationUpdate] = await Promise.all([
+    supabase
+      .from("whatsapp_messages")
+      .update({
+        wamid: result.wamid ?? null,
+        status: result.error ? "failed" : "sent",
+        error_message: result.error ?? null,
+      })
+      .eq("id", pendingMessage.id),
+    result.error
+      ? Promise.resolve({ error: null })
+      : supabase
+          .from("whatsapp_conversations")
+          .update({ last_message_at: now, last_message_preview: body })
+          .eq("id", conversation.id),
+  ]);
 
-  if (updateMessageError) {
-    console.error("whatsapp message update:", updateMessageError.message);
+  if (messageUpdate.error) {
+    console.error("whatsapp message update:", messageUpdate.error.message);
+    return {
+      ok: false,
+      error:
+        "El mensaje fue enviado, pero no se pudo confirmar su estado. No lo reenvies.",
+      messageId: pendingMessage.id,
+      sent: !result.error,
+    };
   }
 
   if (result.error) {
-    revalidatePath("/whatsapp");
-    redirect(
-      `${back}&error=${encodeURIComponent("No se pudo enviar el mensaje. Intenta de nuevo.")}`,
-    );
+    return {
+      ok: false,
+      error: "No se pudo enviar el mensaje. Intenta de nuevo.",
+      messageId: pendingMessage.id,
+    };
   }
 
-  const { error: conversationUpdateError } = await supabase
-    .from("whatsapp_conversations")
-    .update({ last_message_at: now, last_message_preview: body })
-    .eq("id", conversation.id);
-
-  if (conversationUpdateError) {
-    redirect(
-      `${back}&error=${encodeURIComponent("El mensaje fue enviado, pero la bandeja no pudo actualizarse. Recarga la pagina.")}`,
+  if (conversationUpdate.error) {
+    console.error(
+      "whatsapp conversation update:",
+      conversationUpdate.error.message,
     );
   }
 
   if (conversation.client_id) {
-    await logActivity(supabase, {
-      actor_id: user.id,
-      client_id: conversation.client_id,
-      entity_type: "whatsapp_message",
-      entity_id: conversation.id,
-      action: "sent",
-      description: `Mensaje de WhatsApp enviado: ${body.slice(0, 80)}`,
-    });
+    after(() =>
+      logActivity(supabase, {
+        actor_id: user.id,
+        client_id: conversation.client_id,
+        entity_type: "whatsapp_message",
+        entity_id: conversation.id,
+        action: "sent",
+        description: `Mensaje de WhatsApp enviado: ${body.slice(0, 80)}`,
+      }),
+    );
+  }
+
+  return { ok: true, messageId: pendingMessage.id };
+}
+
+export async function reintentarMensaje(formData: FormData) {
+  const conversationId = String(formData.get("conversation_id") ?? "");
+  const result = await enviarMensaje(formData);
+
+  if (!result.ok) {
+    redirect(
+      `/whatsapp?c=${encodeURIComponent(conversationId)}&error=${encodeURIComponent(result.error)}`,
+    );
   }
 
   revalidatePath("/whatsapp");
-  redirect(back);
+  redirect(`/whatsapp?c=${encodeURIComponent(conversationId)}`);
 }
 
 const imagenSchema = z.object({

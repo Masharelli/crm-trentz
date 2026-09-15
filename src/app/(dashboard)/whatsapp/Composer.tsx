@@ -1,6 +1,15 @@
 "use client";
 
-import { Clock, ImagePlus, LoaderCircle, Send, X } from "lucide-react";
+import {
+  AlertCircle,
+  Check,
+  Clock,
+  Clock3,
+  ImagePlus,
+  LoaderCircle,
+  Send,
+  X,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useFormStatus } from "react-dom";
 import { WINDOW_MS } from "@/lib/whatsapp/phone";
@@ -43,23 +52,79 @@ export default function Composer({
   conversationId,
   lastInboundAt,
   templates,
+  renderedMessageIds,
 }: {
   conversationId: string;
   lastInboundAt: string | null;
   templates: WhatsAppTemplate[];
+  renderedMessageIds: string[];
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
   const [windowOpen, setWindowOpen] = useState<boolean | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
   const [fileError, setFileError] = useState<string | null>(null);
+  const [sendError, setSendError] = useState<string | null>(null);
+  const [optimisticMessages, setOptimisticMessages] = useState<Array<{
+    tempId: string;
+    messageId?: string;
+    body: string;
+    status: "pending" | "sent";
+  }>>([]);
 
   useEffect(() => {
     return () => {
       if (previewUrl) URL.revokeObjectURL(previewUrl);
     };
   }, [previewUrl]);
+
+  async function sendText(formData: FormData) {
+    const body = String(formData.get("body") ?? "").trim();
+    if (!body) return;
+
+    const tempId = crypto.randomUUID();
+    setSendError(null);
+    setOptimisticMessages((current) => [
+      ...current.filter(
+        (message) =>
+          !message.messageId || !renderedMessageIds.includes(message.messageId),
+      ),
+      { tempId, body, status: "pending" },
+    ]);
+    formRef.current?.reset();
+
+    const result = await enviarMensaje(formData);
+
+    if (result.ok) {
+      setOptimisticMessages((current) =>
+        current.map((message) =>
+          message.tempId === tempId
+            ? { ...message, messageId: result.messageId, status: "sent" }
+            : message,
+        ),
+      );
+      return;
+    }
+
+    setSendError(result.error);
+    setOptimisticMessages((current) =>
+      result.sent
+        ? current.map((message) =>
+            message.tempId === tempId
+              ? { ...message, messageId: result.messageId, status: "sent" }
+              : message,
+          )
+        : current.filter((message) => message.tempId !== tempId),
+    );
+    if (!result.sent && textareaRef.current) textareaRef.current.value = body;
+  }
+
+  const visibleOptimisticMessages = optimisticMessages.filter(
+    (message) =>
+      !message.messageId || !renderedMessageIds.includes(message.messageId),
+  );
 
   function clearImage() {
     setSelectedFile(null);
@@ -139,7 +204,7 @@ export default function Composer({
   return (
     <form
       ref={formRef}
-      action={selectedFile ? enviarImagen : enviarMensaje}
+      action={selectedFile ? enviarImagen : sendText}
       className="grid gap-2 border-t border-zinc-100 bg-zinc-50 px-4 py-3 sm:px-6"
     >
       <input type="hidden" name="conversation_id" value={conversationId} />
@@ -179,9 +244,35 @@ export default function Composer({
         </div>
       ) : null}
 
-      {fileError ? (
+      {visibleOptimisticMessages.length > 0 ? (
+        <div className="grid gap-1.5" aria-live="polite">
+          {visibleOptimisticMessages.map((message) => (
+            <div key={message.tempId} className="flex justify-end">
+              <div className="max-w-[85%] rounded-2xl rounded-br-sm bg-emerald-600 px-3.5 py-2 text-sm text-white sm:max-w-[70%]">
+                <p className="whitespace-pre-wrap break-words">{message.body}</p>
+                <div className="mt-1 flex items-center justify-end gap-1 text-[10px] text-emerald-100">
+                  {message.status === "pending" ? (
+                    <>
+                      <span>Enviando</span>
+                      <Clock3 size={13} />
+                    </>
+                  ) : (
+                    <>
+                      <span>Enviado</span>
+                      <Check size={14} />
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : null}
+
+      {fileError || sendError ? (
         <p role="alert" className="text-xs font-medium text-rose-600">
-          {fileError}
+          <AlertCircle size={13} className="mr-1 inline" />
+          {fileError ?? sendError}
         </p>
       ) : null}
 
@@ -200,6 +291,7 @@ export default function Composer({
           <ImagePlus size={19} />
         </button>
         <textarea
+          ref={textareaRef}
           name="body"
           rows={1}
           required={!selectedFile}

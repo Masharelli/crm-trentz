@@ -21,7 +21,7 @@ import LinkClientDialog from "./LinkClientDialog";
 import MarkAsRead from "./MarkAsRead";
 import ThreadScroller from "./ThreadScroller";
 import PendingButton from "./PendingButton";
-import { enviarMensaje } from "./actions";
+import { reintentarMensaje } from "./actions";
 
 export type MessageRow = {
   id: string;
@@ -284,7 +284,10 @@ export default function MessageThread({
                     message.status === "failed" &&
                     message.type === "text" &&
                     message.body ? (
-                      <form action={enviarMensaje} className="mt-2 flex justify-end">
+                      <form
+                        action={reintentarMensaje}
+                        className="mt-2 flex justify-end"
+                      >
                         <input
                           type="hidden"
                           name="conversation_id"
@@ -313,6 +316,7 @@ export default function MessageThread({
           conversationId={conversation.id}
           lastInboundAt={lastInboundAt}
           templates={templates}
+          renderedMessageIds={messages.slice(-10).map((message) => message.id)}
         />
       ) : null}
     </div>

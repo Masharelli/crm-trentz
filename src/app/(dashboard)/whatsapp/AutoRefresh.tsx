@@ -13,11 +13,13 @@ export default function AutoRefresh({ intervalMs }: { intervalMs: number }) {
 
   useEffect(() => {
     function refreshSoon() {
-      if (refreshTimeout.current !== null) return;
+      if (refreshTimeout.current !== null) {
+        window.clearTimeout(refreshTimeout.current);
+      }
       refreshTimeout.current = window.setTimeout(() => {
         refreshTimeout.current = null;
         if (document.visibilityState === "visible") router.refresh();
-      }, 250);
+      }, 500);
     }
 
     const channel = supabase
